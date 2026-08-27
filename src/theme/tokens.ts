@@ -15,6 +15,9 @@ export const colors = {
 
   surface: "#ffffff",
   surface2: "#faf7f4",
+  surface3: "#e7e1dc",
+  accentSoft: "#fff7ed",
+  accentTint: "#ffeadb",
   text: "#1c1917",
   textMuted: "#78716c",
 } as const;
