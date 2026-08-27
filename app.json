@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Raízes",
+    "slug": "raizes",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "raizes",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#12100e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.edu.ulbra.raizes"
+    },
+    "android": {
+      "package": "br.edu.ulbra.raizes",
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#12100e"
+      }
+    },
+    "web": { "bundler": "metro", "output": "static" },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-sqlite",
+      ["expo-splash-screen", { "backgroundColor": "#12100e", "resizeMode": "contain" }]
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}
