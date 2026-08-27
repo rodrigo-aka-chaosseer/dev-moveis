@@ -1,4 +1,7 @@
-
+/**
+ * Cores e medidas do protótipo. Fonte única de verdade: se precisar de uma
+ * cor nova, coloca aqui antes de usar na tela.
+ */
 export const colors = {
   accent: "#d4622a",
   accentDark: "#9a3412",
@@ -12,10 +15,11 @@ export const colors = {
 
   surface: "#ffffff",
   surface2: "#faf7f4",
+  surface3: "#e7e1dc",
+  accentSoft: "#fff7ed",
+  accentTint: "#ffeadb",
   text: "#1c1917",
   textMuted: "#78716c",
-  tabInactive: "#a8a29e",
-  tabBorder: "#eee9e5",
 } as const;
 
 export const radius = {
