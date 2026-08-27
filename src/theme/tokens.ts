@@ -20,6 +20,8 @@ export const colors = {
   accentTint: "#ffeadb",
   text: "#1c1917",
   textMuted: "#78716c",
+  tabInactive: "#a8a29e",
+  tabBorder: "#eee9e5",
 } as const;
 
 export const radius = {

@@ -10,7 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, fonts, radius, spacing } from "@/theme/tokens";
+import { colors, fonts, radius, spacing } from "../src/theme/tokens";
 
 const INTERESSES = [
   { id: "gastronomia", nome: "Gastronomia", icone: "🍴" },
