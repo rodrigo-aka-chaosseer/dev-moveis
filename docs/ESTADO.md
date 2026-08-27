@@ -14,7 +14,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [x] RAÍZES-01 — tela de abertura
 - [ ] RAÍZES-02 — seleção de interesses (Maria Clara)
 - [ ] RAÍZES-03 — navegação por abas (Levi)
-- [ ] RAÍZES-04 — tela de perfil
+- [x] RAÍZES-04 — tela de perfil (passaporte cultural)
 
 ## Decisões em aberto
 
@@ -30,6 +30,6 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 O diferencial do app é conteúdo curado, não código. Cada lugar precisa de
 história, fonte, acessibilidade e ambiente sensorial escritos à mão, e isso
 não sai de API nenhuma. Sem uns 20 a 30 lugares prontos, o app chega vazio na
-apresentação, e essa é a única parte que não dá pra virar na véspera.
+apresentação — e essa é a única parte que não dá pra virar na véspera.
 
 Hoje nenhuma das quatro tasks é de conteúdo. Falta dono pra isso.
