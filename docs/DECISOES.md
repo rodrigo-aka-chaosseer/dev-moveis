@@ -52,3 +52,29 @@ do que a gente descobrir isso na véspera da apresentação.
 
 O schema ainda não está ligado em nenhuma tela. Ele está no repositório como
 referência de tudo que precisa ser levantado sobre cada lugar.
+
+---
+
+## 4. Login entra no escopo, com sessão só no aparelho
+
+Data: 03/09/2026
+
+Login estava fora de escopo. O grupo decidiu que entra agora (RAÍZES-05),
+mas sem servidor: a tela pede e-mail e senha, guarda só o e-mail, o modo
+(visitante ou identificado) e a data de entrada, e nada mais. A senha fica na
+memória do formulário, é conferida apenas como "preenchida" e é descartada ao
+entrar. Sem back-end não existe autenticação de verdade, e fingir que existe
+(hash caseiro, senha gravada) seria pior do que não ter.
+
+Cogitei `expo-secure-store` e o SQLite que já está instalado. Descartei os
+dois para esta etapa: o SecureStore não roda na web, e é pela exportação web
+que a gente confere tela sem emulador; o SQLite nunca foi aberto por tela
+nenhuma e seria encanamento novo para guardar três strings. Ficou
+`@react-native-async-storage/async-storage`, que roda no Expo Go, no build
+nativo e na web, numa chave versionada (`raizes.sessao.v1`).
+
+Quando o back-end entrar, o token vai para o `expo-secure-store` (Keychain e
+Keystore), a senha passa a ir na requisição e continua sem ser gravada, e a
+chave sobe para `v2` com leitura da `v1`. Os pontos exatos estão marcados no
+código com o comentário `BACKEND:`. A restrição de abas para visitante fica
+com o dono das abas, usando o `useSessao()` de `src/sessao/`.
