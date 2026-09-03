@@ -1,16 +1,31 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useSessao } from "../src/sessao/SessaoProvider";
 import { colors, fonts, gradients, radius, spacing } from "../src/theme/tokens";
 
 const BACKGROUND = require("../assets/images/splash-bg.jpg");
 
+// Caminho explícito: esta tela e `app/(tabs)/index.tsx` disputam "/".
+const DESTINO_ABAS = "/(tabs)/explorar";
+
 export default function Abertura() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { temSessao, entrarComoVisitante } = useSessao();
+
+  // Quem já entrou (ou já escolheu só olhar) não vê a abertura de novo.
+  if (temSessao) {
+    return <Redirect href={DESTINO_ABAS} />;
+  }
+
+  async function explorarSemConta() {
+    await entrarComoVisitante();
+    router.replace(DESTINO_ABAS);
+  }
 
   return (
     <View style={styles.screen}>
@@ -55,7 +70,7 @@ export default function Abertura() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Começar a explorar"
-            onPress={() => router.push("/onboarding")}
+            onPress={() => router.push("/login")}
             style={({ pressed }) => [
               styles.primaryWrapper,
               pressed && styles.primaryPressed,
@@ -73,8 +88,8 @@ export default function Abertura() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Explorar sem responder o questionário"
-            onPress={() => router.push("/onboarding")}
+            accessibilityLabel="Explorar sem responder, como visitante"
+            onPress={explorarSemConta}
             style={({ pressed }) => [styles.ghost, pressed && styles.ghostPressed]}
           >
             <Text style={styles.ghostLabel}>Explorar sem responder</Text>

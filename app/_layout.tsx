@@ -10,8 +10,12 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
 
+import { SessaoProvider, useSessaoInicial } from "../src/sessao/SessaoProvider";
+
 // Segura a splash nativa até a fonte carregar. Sem isso dá pra ver o título
-// piscando na fonte do sistema antes da Jakarta entrar.
+// piscando na fonte do sistema antes da Jakarta entrar. Também espera a
+// sessão gravada: quem já entrou vai direto para as abas sem ver a abertura
+// piscar antes.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
@@ -20,22 +24,28 @@ export default function RootLayout() {
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_800ExtraBold,
   });
+  const sessao = useSessaoInicial();
+
+  // Se a fonte falhar, o app abre mesmo assim com a fonte do sistema. A
+  // sessão nunca falha: storage quebrado vira "ninguém entrou".
+  const pronto = (fontsLoaded || fontError !== null) && sessao.pronta;
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (pronto) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsLoaded, fontError]);
+  }, [pronto]);
 
-  // Se a fonte falhar, o app abre mesmo assim com a fonte do sistema.
-  if (!fontsLoaded && !fontError) {
+  if (!pronto) {
     return null;
   }
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <SessaoProvider sessaoInicial={sessao.sessaoInicial}>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false }} />
+      </SessaoProvider>
     </SafeAreaProvider>
   );
 }
