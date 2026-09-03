@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSessao } from "../src/sessao/SessaoProvider";
 import {
+  credenciaisSaoValidas,
   normalizarEmail,
   validarLogin,
   type ErrosLogin,
@@ -41,10 +42,11 @@ import {
 // A mesma foto da abertura, com véu terracota: o login lembra de onde veio.
 const FUNDO = require("../assets/images/splash-bg.jpg");
 
-// Caminho explícito: `app/index.tsx` e `app/(tabs)/index.tsx` disputam "/".
-// Quando o "Continuar" da seleção de interesses passar a levar às abas, este
-// destino vira "/onboarding" e a sequência fica abertura → login → interesses.
-const DESTINO_APOS_ENTRAR = "/(tabs)/explorar";
+// Caminhos explícitos: `app/index.tsx` e `app/(tabs)/index.tsx` disputam "/".
+// A conta identificada abre o perfil; quem entra como visitante continua na
+// exploração, pois esse fluxo não passou pela validação de credenciais.
+const DESTINO_APOS_LOGIN = "/(tabs)/perfil";
+const DESTINO_VISITANTE = "/(tabs)/explorar";
 
 // Em repouso o bloco terracota ocupa quase metade da tela e a marca é grande.
 // Quando a pessoa toca num campo, ele encolhe para dar lugar ao teclado.
@@ -232,6 +234,19 @@ export default function Login() {
       return;
     }
 
+    if (!credenciaisSaoValidas({ email, senha })) {
+      const mensagem = "E-mail ou senha incorretos.";
+      setErroGeral(mensagem);
+      tremer(tremorEmail);
+      tremer(tremorSenha);
+      vibrar(() =>
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+      );
+      AccessibilityInfo.announceForAccessibility(mensagem);
+      emailRef.current?.focus();
+      return;
+    }
+
     setEnviando(true);
     try {
       // BACKEND: aqui entra a autenticação (email, senha) → usuário e token.
@@ -257,7 +272,7 @@ export default function Login() {
       }
       // `enviando` fica ligado de propósito: a tela some com o replace e um
       // segundo toque no botão durante a transição não pode entrar de novo.
-      router.replace(DESTINO_APOS_ENTRAR);
+      router.replace(DESTINO_APOS_LOGIN);
     } catch {
       const mensagem = "Não deu para guardar sua entrada. Tenta de novo.";
       setErroGeral(mensagem);
@@ -274,7 +289,7 @@ export default function Login() {
     setEnviando(true);
     vibrar(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
     await entrarComoVisitante();
-    router.replace(DESTINO_APOS_ENTRAR);
+    router.replace(DESTINO_VISITANTE);
   }
 
   function voltar() {
