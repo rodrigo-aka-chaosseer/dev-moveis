@@ -1,16 +1,32 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { useState } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useSessao } from "../src/sessao/SessaoProvider";
 import { colors, fonts, gradients, radius, spacing } from "../src/theme/tokens";
 
 const BACKGROUND = require("../assets/images/splash-bg.jpg");
 
+// Caminho explícito: esta tela e `app/(tabs)/index.tsx` disputam "/".
+// Quem já tem sessão nem chega aqui: a guarda em app/_layout.tsx tira a
+// abertura da pilha.
+const DESTINO_ABAS = "/(tabs)/explorar";
+
 export default function Abertura() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { entrarComoVisitante } = useSessao();
+  const [entrando, setEntrando] = useState(false);
+
+  async function explorarSemConta() {
+    if (entrando) return;
+    setEntrando(true);
+    await entrarComoVisitante();
+    router.replace(DESTINO_ABAS);
+  }
 
   return (
     <View style={styles.screen}>
@@ -55,7 +71,7 @@ export default function Abertura() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Começar a explorar"
-            onPress={() => router.push("/onboarding")}
+            onPress={() => router.push("/login")}
             style={({ pressed }) => [
               styles.primaryWrapper,
               pressed && styles.primaryPressed,
@@ -73,8 +89,10 @@ export default function Abertura() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Explorar sem responder o questionário"
-            onPress={() => router.push("/onboarding")}
+            accessibilityLabel="Explorar sem responder, como visitante"
+            accessibilityState={{ disabled: entrando }}
+            disabled={entrando}
+            onPress={explorarSemConta}
             style={({ pressed }) => [styles.ghost, pressed && styles.ghostPressed]}
           >
             <Text style={styles.ghostLabel}>Explorar sem responder</Text>

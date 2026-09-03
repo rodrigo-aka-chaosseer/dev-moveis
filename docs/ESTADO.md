@@ -15,6 +15,22 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [ ] RAÍZES-02 — seleção de interesses (Maria Clara)
 - [ ] RAÍZES-03 — navegação por abas (Levi)
 - [ ] RAÍZES-04 — tela de perfil
+- [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
+
+## Pendências que nasceram do login (decisão 4)
+
+- **Visitante só vê Explorar.** O login entrega `useSessao()` em
+  `src/sessao/`; aplicar a restrição nas outras abas é do dono das abas
+  (RAÍZES-03).
+- **"Continuar" dos interesses ainda não leva a lugar nenhum.** Quando levar
+  às abas (RAÍZES-02), o login troca uma linha para mandar para
+  `/onboarding` em vez de direto para as abas.
+- **Sair da conta** fica na tela de perfil (RAÍZES-04), chamando `sair()` do
+  mesmo hook. É também o único jeito de um visitante chegar ao login antes
+  do dia virar: a sessão de visitante expira à meia-noite.
+- **`/onboarding` ficou sem caminho até ser ligado.** Antes, os dois botões
+  da abertura levavam à seleção de interesses; agora ela só abre por URL.
+  Volta ao fluxo assim que o "Continuar" dela levar às abas.
 
 ## Decisões em aberto
 
@@ -24,6 +40,8 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 2. **Mapa.** `expo-maps` ou `react-native-maps`? Os dois precisam de chave de
    API e de development build. É o maior risco técnico do projeto.
 3. **Backend.** Supabase ou API própria. Dá pra adiar, mas não muito.
+4. **Onde guardar o token na web.** No aparelho vai para `expo-secure-store`,
+   mas ele não existe na web. Só importa quando houver back-end.
 
 ## Risco principal
 

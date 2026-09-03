@@ -22,12 +22,24 @@ export const colors = {
   textMuted: "#78716c",
   tabInactive: "#a8a29e",
   tabBorder: "#eee9e5",
+
+  /** Campos de formulário. A borda de foco repete o accent de propósito:
+   *  se um dia o foco mudar de cor, muda aqui e não em cada tela. */
+  inputBorder: "#e7e1dc",
+  inputBorderFocus: "#d4622a",
+
+  /** Erro de formulário. Vermelho terroso, não o vermelho puro do sistema. */
+  error: "#b91c1c",
+  errorSoft: "#fef2f2",
 } as const;
 
 export const radius = {
   button: 10,
+  input: 12,
   card: 14,
   large: 20,
+  /** Cantos de cima da folha que sobe sobre o bloco terracota. */
+  sheet: 24,
 } as const;
 
 export const spacing = {
@@ -55,5 +67,11 @@ export const gradients = {
   screenBottom: {
     colors: ["transparent", "rgba(92, 61, 46, 0.55)", "rgba(18, 16, 14, 0.95)"],
     locations: [0.28, 0.58, 1],
+  },
+  /** Véu terracota sobre a mesma foto, no login. Escurece para o pé, onde
+   *  ficam marca e frase em branco: sobre o accentDark o contraste passa AA. */
+  loginVeil: {
+    colors: ["rgba(212, 98, 42, 0.78)", "rgba(154, 52, 18, 0.9)", "rgba(92, 61, 46, 0.96)"],
+    locations: [0, 0.55, 1],
   },
 } as const;
