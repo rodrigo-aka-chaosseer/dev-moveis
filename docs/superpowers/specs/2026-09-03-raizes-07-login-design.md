@@ -1,4 +1,4 @@
-# RAÍZES-05 — tela de login: design
+# RAÍZES-07: tela de login, design
 
 Data: 03/09/2026. Decisões tomadas com o dono do produto. Decisão
 arquitetural correspondente: `docs/DECISOES.md`, bloco 4.

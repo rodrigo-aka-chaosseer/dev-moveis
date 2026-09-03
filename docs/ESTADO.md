@@ -15,7 +15,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [ ] RAÍZES-02 — seleção de interesses (Maria Clara)
 - [ ] RAÍZES-03 — navegação por abas (Levi)
 - [ ] RAÍZES-04 — tela de perfil
-- [ ] RAÍZES-05 — login e sessão no aparelho (Josias)
+- [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
 
 ## Pendências que nasceram do login (decisão 4)
 

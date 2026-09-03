@@ -59,7 +59,7 @@ referência de tudo que precisa ser levantado sobre cada lugar.
 
 Data: 03/09/2026
 
-Login estava fora de escopo. O grupo decidiu que entra agora (RAÍZES-05),
+Login estava fora de escopo. O grupo decidiu que entra agora (RAÍZES-07, issue #9),
 mas sem servidor: a tela pede e-mail e senha, guarda só o e-mail, o modo
 (visitante ou identificado) e a data de entrada, e nada mais. A senha fica na
 memória do formulário, é conferida apenas como "preenchida" e é descartada ao
