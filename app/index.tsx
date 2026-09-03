@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Redirect, useRouter } from "expo-router";
+import { useState } from "react";
+import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,19 +11,19 @@ import { colors, fonts, gradients, radius, spacing } from "../src/theme/tokens";
 const BACKGROUND = require("../assets/images/splash-bg.jpg");
 
 // Caminho explícito: esta tela e `app/(tabs)/index.tsx` disputam "/".
+// Quem já tem sessão nem chega aqui: a guarda em app/_layout.tsx tira a
+// abertura da pilha.
 const DESTINO_ABAS = "/(tabs)/explorar";
 
 export default function Abertura() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { temSessao, entrarComoVisitante } = useSessao();
-
-  // Quem já entrou (ou já escolheu só olhar) não vê a abertura de novo.
-  if (temSessao) {
-    return <Redirect href={DESTINO_ABAS} />;
-  }
+  const { entrarComoVisitante } = useSessao();
+  const [entrando, setEntrando] = useState(false);
 
   async function explorarSemConta() {
+    if (entrando) return;
+    setEntrando(true);
     await entrarComoVisitante();
     router.replace(DESTINO_ABAS);
   }
@@ -89,6 +90,8 @@ export default function Abertura() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Explorar sem responder, como visitante"
+            accessibilityState={{ disabled: entrando }}
+            disabled={entrando}
             onPress={explorarSemConta}
             style={({ pressed }) => [styles.ghost, pressed && styles.ghostPressed]}
           >

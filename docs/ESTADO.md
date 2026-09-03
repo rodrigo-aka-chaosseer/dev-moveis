@@ -26,7 +26,11 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
   às abas (RAÍZES-02), o login troca uma linha para mandar para
   `/onboarding` em vez de direto para as abas.
 - **Sair da conta** fica na tela de perfil (RAÍZES-04), chamando `sair()` do
-  mesmo hook.
+  mesmo hook. É também o único jeito de um visitante chegar ao login antes
+  do dia virar: a sessão de visitante expira à meia-noite.
+- **`/onboarding` ficou sem caminho até ser ligado.** Antes, os dois botões
+  da abertura levavam à seleção de interesses; agora ela só abre por URL.
+  Volta ao fluxo assim que o "Continuar" dela levar às abas.
 
 ## Decisões em aberto
 

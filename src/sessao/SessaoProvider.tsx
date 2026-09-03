@@ -38,6 +38,7 @@ export type ContextoSessao = {
   entrar(email: string): Promise<void>;
   /** Muda o estado primeiro; se a gravação falhar, segue sem lançar. */
   entrarComoVisitante(): Promise<void>;
+  /** Apaga do disco antes de limpar o estado. Lança se não conseguir apagar. */
   sair(): Promise<void>;
 };
 
@@ -102,13 +103,11 @@ export function SessaoProvider({ sessaoInicial, children }: Props) {
     }
   }, []);
 
+  // Apaga do disco antes de limpar a memória: se só a memória fosse limpa e
+  // o disco falhasse, a pessoa "sairia" e voltaria logada na próxima abertura.
   const sair = useCallback(async () => {
+    await apagarSessao();
     setSessao(null);
-    try {
-      await apagarSessao();
-    } catch (erro) {
-      console.warn("Não foi possível apagar a sessão gravada.", erro);
-    }
   }, []);
 
   const valor = useMemo<ContextoSessao>(

@@ -44,15 +44,34 @@ gravada.
 - `entrarComoVisitante()` muda o estado primeiro e grava sem lançar erro.
   Perder sessão de visitante só significa ver a abertura de novo.
 
-## Direção visual: bloco terracota
+## Direção visual: bloco terracota sobre a foto da abertura
 
-Terço superior em `colors.accent` chapado com a marca e a frase "Quem chega,
-chega com nome." Folha branca sobe por cima com raio só nos cantos de cima e
-carrega o formulário. Campos com fundo creme e borda `surface3`; borda
-terracota no foco, vermelha com erro, mensagem inline abaixo do campo.
-Botão "Entrar na cidade" em gradiente terracota, 52 de altura, como na
-abertura. Link "Só dar uma olhada por hoje" sem borda. Nota: "Por enquanto
-sua entrada fica só neste aparelho."
+Pesquisa em telas premiadas (Duolingo ADA 2023, Arc ADA 2024, Nubank,
+Headspace, Cash App, Monzo) apontou o que separa formulário de produto:
+marca com território próprio que sobrevive ao teclado, entrada em
+sequência, feedback no lugar e visitante com o mesmo peso do login.
+
+Terço superior com a mesma foto da abertura sob um véu terracota que
+escurece para o pé (`gradients.loginVeil`), com saudação pela hora do
+aparelho, a marca e a frase "Quem chega, chega com nome." Em repouso o bloco
+ocupa 44% da tela; ao focar um campo ele encolhe em 280 ms. Folha branca
+sobe por cima com raio só nos cantos de cima. Campos com rótulo pequeno em
+caixa alta e só linha inferior: terracota no foco, vermelha com erro,
+mensagem inline abaixo. Botão "Entrar na cidade" em gradiente terracota,
+52 de altura; "Só dar uma olhada por hoje" é botão fantasma de 48, mesmo
+peso. Nota: "Sua entrada fica só neste aparelho e funciona sem internet."
+
+Movimento (Animated puro, driver nativo, tudo desligado com "reduzir
+movimento"): entrada escalonada de 80 ms entre peças e 280 ms cada; botão
+encolhe 4% com mola firme e vibra leve ao pressionar; ao entrar, spinner no
+lugar do rótulo, depois check que cresce, vibração de sucesso e navegação;
+campo inválido treme 200 ms com amplitude caindo e vibra erro, sem travar a
+digitação.
+
+Guarda de rotas em `app/_layout.tsx` com `Stack.Protected`: com sessão a
+abertura sai da pilha (voltar a partir das abas não cai nela); sem sessão as
+abas não existem. Visitante ainda alcança o login. Sessão de visitante vale
+só no dia em que foi criada.
 
 ## Fora desta task
 

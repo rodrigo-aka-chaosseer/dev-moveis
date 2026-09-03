@@ -23,9 +23,29 @@ export type Sessao = {
 
 export const CHAVE_SESSAO = "raizes.sessao.v1";
 
-// Storage quebrado não pode segurar a splash para sempre. Passou disso, o
-// app abre como se ninguém tivesse entrado.
-const LIMITE_LEITURA_MS = 1500;
+// Storage quebrado não pode segurar a splash nem travar o botão de entrar
+// para sempre. Leitura que passa do limite vira "ninguém entrou"; gravação
+// que passa do limite vira erro, e a tela avisa.
+const LIMITE_LEITURA_MS = 3000;
+const LIMITE_GRAVACAO_MS = 4000;
+
+function comLimite<T>(promessa: Promise<T>, ms: number, aoEstourar: () => T): Promise<T> {
+  let temporizador: ReturnType<typeof setTimeout> | undefined;
+  const limite = new Promise<T>((resolve) => {
+    temporizador = setTimeout(() => resolve(aoEstourar()), ms);
+  });
+  return Promise.race([promessa, limite]).finally(() => clearTimeout(temporizador));
+}
+
+function ehHoje(iso: string): boolean {
+  const data = new Date(iso);
+  const hoje = new Date();
+  return (
+    data.getFullYear() === hoje.getFullYear() &&
+    data.getMonth() === hoje.getMonth() &&
+    data.getDate() === hoje.getDate()
+  );
+}
 
 function ehSessaoValida(valor: unknown): valor is Sessao {
   if (typeof valor !== "object" || valor === null) return false;
@@ -46,12 +66,12 @@ function ehSessaoValida(valor: unknown): valor is Sessao {
  * e o app segue como primeira abertura.
  */
 export async function lerSessao(): Promise<Sessao | null> {
-  const limite = new Promise<null>((resolve) =>
-    setTimeout(() => resolve(null), LIMITE_LEITURA_MS),
-  );
-
   try {
-    const bruto = await Promise.race([AsyncStorage.getItem(CHAVE_SESSAO), limite]);
+    const bruto = await comLimite(
+      AsyncStorage.getItem(CHAVE_SESSAO),
+      LIMITE_LEITURA_MS,
+      () => null,
+    );
     if (bruto === null) return null;
 
     const registro: unknown = JSON.parse(bruto);
@@ -60,18 +80,41 @@ export async function lerSessao(): Promise<Sessao | null> {
       return null;
     }
 
-    return registro;
+    // "Só dar uma olhada por hoje" vale o que diz: no dia seguinte a pessoa
+    // vê a abertura de novo e pode entrar com conta.
+    if (registro.modo === "visitante" && !ehHoje(registro.entradoEm)) {
+      return null;
+    }
+
+    // Reconstrói o objeto para não carregar chave extra que alguém tenha
+    // gravado no disco.
+    return registro.modo === "identificado"
+      ? { modo: "identificado", email: registro.email, entradoEm: registro.entradoEm }
+      : { modo: "visitante", entradoEm: registro.entradoEm };
   } catch (erro) {
     console.warn("Não foi possível ler a sessão gravada.", erro);
     return null;
   }
 }
 
-/** Lança se a gravação falhar. Quem chama decide o que mostrar. */
-export async function gravarSessao(sessao: Sessao): Promise<void> {
-  await AsyncStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+function estourou(): never {
+  throw new Error("O armazenamento do aparelho demorou demais para responder.");
 }
 
+/** Lança se a gravação falhar ou demorar demais. Quem chama decide o que mostrar. */
+export async function gravarSessao(sessao: Sessao): Promise<void> {
+  await comLimite(
+    AsyncStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao)),
+    LIMITE_GRAVACAO_MS,
+    estourou,
+  );
+}
+
+/** Lança se não conseguir apagar: sessão que fica no disco volta na próxima abertura. */
 export async function apagarSessao(): Promise<void> {
-  await AsyncStorage.removeItem(CHAVE_SESSAO);
+  await comLimite(
+    AsyncStorage.removeItem(CHAVE_SESSAO),
+    LIMITE_GRAVACAO_MS,
+    estourou,
+  );
 }
