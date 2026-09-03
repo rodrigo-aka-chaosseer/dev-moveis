@@ -10,6 +10,7 @@ export default function Onboarding() {
   return (
     <View style={styles.screen}>
       <Text style={styles.text}>Seleção de interesses</Text>
+      {/* Aqui pode ser adicionada uma lista de checkboxes para o usuário selecionar seus interesses. */}
     </View>
   );
 }

@@ -55,6 +55,7 @@ export default function Abertura() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Começar a explorar"
+            // Leva para a tela de seleção de interesses, que é a primeira tela do onboarding
             onPress={() => router.push("/onboarding")}
             style={({ pressed }) => [
               styles.primaryWrapper,
@@ -74,10 +75,12 @@ export default function Abertura() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Explorar sem responder o questionário"
-            onPress={() => router.push("/onboarding")}
+            //Vai para a tela de perfil caso o usuário não responda o questionário
+            onPress={() => router.push("/perfil")}
             style={({ pressed }) => [styles.ghost, pressed && styles.ghostPressed]}
           >
             <Text style={styles.ghostLabel}>Explorar sem responder</Text>
+            
           </Pressable>
         </View>
       </View>
