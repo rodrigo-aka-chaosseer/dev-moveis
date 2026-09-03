@@ -22,12 +22,28 @@ export const colors = {
   textMuted: "#78716c",
   tabInactive: "#a8a29e",
   tabBorder: "#eee9e5",
+
+  /** Texto secundário sobre o bloco terracota (login). */
+  onAccentMuted: "rgba(255, 255, 255, 0.78)",
+
+  /** Campos de formulário. A borda de foco repete o accent de propósito:
+   *  se um dia o foco mudar de cor, muda aqui e não em cada tela. */
+  inputBg: "#faf7f4",
+  inputBorder: "#e7e1dc",
+  inputBorderFocus: "#d4622a",
+
+  /** Erro de formulário. Vermelho terroso, não o vermelho puro do sistema. */
+  error: "#b91c1c",
+  errorSoft: "#fef2f2",
 } as const;
 
 export const radius = {
   button: 10,
+  input: 12,
   card: 14,
   large: 20,
+  /** Cantos de cima da folha que sobe sobre o bloco terracota. */
+  sheet: 24,
 } as const;
 
 export const spacing = {
