@@ -12,6 +12,7 @@ import {
   TextInput,
   useWindowDimensions,
   View,
+  type TextStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,6 +39,14 @@ const DURACAO_TRANSICAO_MS = 280;
 const PROPORCAO_BLOCO_ALTO = 0.44;
 
 type Campo = "email" | "senha";
+
+// Na web o navegador desenha um anel de foco próprio em volta do campo, e a
+// linha inferior já mostra o foco. "none" não está no tipo do React Native,
+// que só conhece os valores nativos, por isso o cast.
+const semAnelDoNavegador =
+  Platform.OS === "web"
+    ? ({ outlineStyle: "none" } as unknown as TextStyle)
+    : null;
 
 export default function Login() {
   const router = useRouter();
@@ -176,7 +185,7 @@ export default function Login() {
                 ]}
               >
                 <TextInput
-                  style={styles.entrada}
+                  style={[styles.entrada, semAnelDoNavegador]}
                   value={email}
                   onChangeText={(texto) => {
                     setEmail(texto);
@@ -194,7 +203,7 @@ export default function Login() {
                   autoComplete="email"
                   textContentType="emailAddress"
                   returnKeyType="next"
-                  blurOnSubmit={false}
+                  submitBehavior="submit"
                   editable={!enviando}
                 />
               </View>
@@ -216,7 +225,7 @@ export default function Login() {
               >
                 <TextInput
                   ref={senhaRef}
-                  style={styles.entrada}
+                  style={[styles.entrada, semAnelDoNavegador]}
                   value={senha}
                   onChangeText={(texto) => {
                     setSenha(texto);
@@ -407,8 +416,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 17,
     color: colors.text,
-    // Sem o anel azul do navegador na exportação web; a linha já mostra o foco.
-    outlineWidth: 0,
   },
   olho: {
     width: MIN_TOUCH,
