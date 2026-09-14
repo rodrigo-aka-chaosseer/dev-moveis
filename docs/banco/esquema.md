@@ -120,7 +120,10 @@ de pessoa: `usuarios`, `preferencias`, `favoritos`, `visitas`, `avaliacoes`,
 (um roteiro gerado revela onde alguém foi ou quer ir — é dado de pessoa, não
 só conteúdo de catálogo).
 
-Três pontos que valem explicar porque não são óbvios à primeira leitura:
+Cinco pontos que valem explicar porque não são óbvios à primeira leitura —
+os quatro primeiros só existem porque uma revisão adversarial (um segundo
+modelo, sem ver o resto da conversa) encontrou furo numa primeira versão
+deste desenho, e vale contar o que era o furo, não só o que ficou:
 
 - **Ninguém se promove a curador sozinho.** A política de edição do próprio
   perfil deixa a pessoa trocar o nome de exibição, mas um gatilho separado
@@ -129,14 +132,23 @@ Três pontos que valem explicar porque não são óbvios à primeira leitura:
 - **Revisão em andamento não é pública.** Conteúdo em `revisoes_local` com
   status "em revisão" só é visível pra quem escreveu ou pra curador — não
   para qualquer usuário logado, mesmo que o rascunho já exista no banco.
-- **Roteiro gerado é privado por padrão.** Só o roteiro temático (curado
-  pelo time, sem dono) é público; o roteiro gerado por alguém só aparece
-  pra essa pessoa, e a tabela de paradas segue a mesma regra do roteiro pai.
-
-`tags_diversidade`, `acessibilidade`, `ambiente_sensorial`, `eventos` e
-`locais_tags` ainda não têm RLS — são conteúdo de catálogo público, sem dado
-de pessoa, mas travar a escrita a curador neles é decisão em aberto (ver
-`docs/ESTADO.md`).
+- **Roteiro gerado é privado por padrão, e ler não é o mesmo que escrever.**
+  Só o roteiro temático (curado pelo time, sem dono) é público; o roteiro
+  gerado por alguém só aparece pra essa pessoa. A tabela de paradas
+  (`roteiro_paradas`) segue a mesma regra do roteiro pai, mas com leitura e
+  escrita em políticas separadas — uma política única deixaria "todo mundo
+  lê o roteiro público" virar, por engano, "todo mundo edita a parada de
+  roteiro de qualquer pessoa".
+- **Sugestão da comunidade nasce sempre pendente.** O INSERT em
+  `sugestoes_local` trava `status`, `local_id`, `revisado_por` e
+  `revisado_em` no estado inicial — sem isso, um usuário comum podia mandar
+  a própria sugestão já marcada como aprovada, forjando uma decisão de
+  curadoria que ninguém tomou.
+- **Catálogo de apoio agora tem RLS.** `tags_diversidade`, `acessibilidade`,
+  `ambiente_sensorial`, `eventos` e `locais_tags` não guardam dado de
+  pessoa, mas ficaram sem trava de escrita numa primeira versão — qualquer
+  usuário autenticado podia alterar ou apagar o catálogo inteiro (inclusive
+  por cascata, apagando uma tag). Leitura pública, escrita só curador.
 
 ## Observação sobre relacionamento e chave estrangeira
 

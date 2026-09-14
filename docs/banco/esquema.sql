@@ -99,7 +99,13 @@ returns trigger
 language plpgsql
 as $$
 begin
-  if new.papel is distinct from old.papel and auth.role() <> 'service_role' then
+  -- coalesce trata explicitamente o caso "sem JWT" (SQL Editor do Supabase,
+  -- conexão direta como superusuário): ali auth.role() vem NULL, e é
+  -- exatamente esse caminho que deve passar. Sem o coalesce, a permissão
+  -- dependeria do comportamento implícito de "IF NULL" no PL/pgSQL — funciona,
+  -- mas não é óbvio pra quem lê depois.
+  if new.papel is distinct from old.papel
+     and coalesce(auth.role(), 'service_role') <> 'service_role' then
     raise exception 'papel não pode ser alterado pelo próprio usuário';
   end if;
   return new;
@@ -122,8 +128,8 @@ create table locais (
   nome text not null,
   categoria categoria_local not null,
 
-  latitude double precision not null,
-  longitude double precision not null,
+  latitude double precision not null check (latitude between -90 and 90),
+  longitude double precision not null check (longitude between -180 and 180),
   endereco text not null,
   -- Gerada a partir de latitude/longitude — não se escreve direto nela.
   -- É o que o índice espacial abaixo usa pra busca por proximidade.
@@ -132,21 +138,23 @@ create table locais (
 
   horarios jsonb,
   gratuito boolean not null default false,
-  preco_centavos integer,
-  tempo_medio_min integer not null,
+  preco_centavos integer check (preco_centavos >= 0),
+  tempo_medio_min integer not null check (tempo_medio_min > 0),
 
-  por_que_conhecer text not null,
-  historia text not null,
+  por_que_conhecer text not null check (length(trim(por_que_conhecer)) > 0),
+  historia text not null check (length(trim(historia)) > 0),
 
   -- Segurança Cultural — null significa "visitação livre".
   aviso_visitacao text,
 
-  fonte text not null,
+  fonte text not null check (length(trim(fonte)) > 0),
   criado_por uuid references usuarios (id),
   atualizado_em timestamptz not null default now(),
 
   imagem_url text,
-  audio_url text
+  audio_url text,
+
+  constraint locais_gratuito_sem_preco check (not gratuito or preco_centavos is null or preco_centavos = 0)
 );
 
 comment on column locais.criado_por is
@@ -227,9 +235,12 @@ create table eventos (
   inicio_em timestamptz not null,
   fim_em timestamptz,
   gratuito boolean not null default true,
-  preco_centavos integer,
+  preco_centavos integer check (preco_centavos >= 0),
   imagem_url text,
-  fonte text not null
+  fonte text not null check (length(trim(fonte)) > 0),
+
+  constraint eventos_fim_depois_do_inicio check (fim_em is null or fim_em > inicio_em),
+  constraint eventos_gratuito_sem_preco check (not gratuito or preco_centavos is null or preco_centavos = 0)
 );
 
 create index idx_eventos_local on eventos (local_id);
@@ -268,12 +279,12 @@ create index idx_revisoes_local_local on revisoes_local (local_id);
 create table sugestoes_local (
   id uuid primary key default gen_random_uuid(),
   usuario_id uuid not null references usuarios (id),
-  nome_sugerido text not null,
+  nome_sugerido text not null check (length(trim(nome_sugerido)) > 0),
   categoria_sugerida categoria_local not null,
-  latitude double precision not null,
-  longitude double precision not null,
+  latitude double precision not null check (latitude between -90 and 90),
+  longitude double precision not null check (longitude between -180 and 180),
   endereco_sugerido text,
-  motivo text not null,
+  motivo text not null check (length(trim(motivo)) > 0),
   status status_sugestao not null default 'pendente',
   local_id uuid references locais (id),
   revisado_por uuid references usuarios (id),
@@ -296,12 +307,12 @@ create index idx_sugestoes_local_status on sugestoes_local (status);
 -- Com servidor, uma linha por pessoa.
 create table preferencias (
   usuario_id uuid primary key references usuarios (id) on delete cascade,
-  interesses jsonb not null,
-  temas_diversidade jsonb not null,
+  interesses jsonb not null check (jsonb_typeof(interesses) = 'array'),
+  temas_diversidade jsonb not null check (jsonb_typeof(temas_diversidade) = 'array'),
   modo_exploracao modo_exploracao not null default 'indiferente',
-  tempo_disponivel_min integer not null default 240,
-  distancia_max_metros integer not null default 5000,
-  necessidades_acessibilidade jsonb not null,
+  tempo_disponivel_min integer not null default 240 check (tempo_disponivel_min > 0),
+  distancia_max_metros integer not null default 5000 check (distancia_max_metros > 0),
+  necessidades_acessibilidade jsonb not null check (jsonb_typeof(necessidades_acessibilidade) = 'array'),
   onboarding_concluido boolean not null default false
 );
 
@@ -365,9 +376,9 @@ create table roteiros (
   titulo text not null,
   descricao text,
   tipo tipo_roteiro not null,
-  duracao_min integer not null,
-  distancia_metros integer not null,
-  custo_centavos integer,
+  duracao_min integer not null check (duracao_min > 0),
+  distancia_metros integer not null check (distancia_metros >= 0),
+  custo_centavos integer check (custo_centavos >= 0),
   imagem_url text,
   criado_em timestamptz not null default now(),
 
@@ -384,9 +395,9 @@ comment on constraint roteiro_dono_condiz_com_tipo on roteiros is
 create table roteiro_paradas (
   roteiro_id uuid not null references roteiros (id) on delete cascade,
   local_id uuid not null references locais (id),
-  ordem integer not null,
-  hora_sugerida text,
-  duracao_min integer not null,
+  ordem integer not null check (ordem > 0),
+  hora_sugerida time,
+  duracao_min integer not null check (duracao_min > 0),
   primary key (roteiro_id, ordem)
 );
 
@@ -474,11 +485,20 @@ create policy revisoes_avaliar_curador on revisoes_local
   for update using (eh_curador());
 
 -- sugestoes_local: qualquer usuário autenticado sugere e vê a própria;
--- curador vê e decide todas.
+-- curador vê e decide todas. O insert trava toda sugestão nascendo
+-- pendente e sem revisão — sem isso, um membro podia mandar a própria
+-- sugestão já com status "aprovada" e revisado_por de outra pessoa,
+-- forjando uma decisão de curadoria que nunca aconteceu.
 create policy sugestoes_ver_propria_ou_curador on sugestoes_local
   for select using (usuario_id = auth.uid() or eh_curador());
 create policy sugestoes_criar_propria on sugestoes_local
-  for insert with check (usuario_id = auth.uid());
+  for insert with check (
+    usuario_id = auth.uid()
+    and status = 'pendente'
+    and local_id is null
+    and revisado_por is null
+    and revisado_em is null
+  );
 create policy sugestoes_avaliar_curador on sugestoes_local
   for update using (eh_curador());
 
@@ -504,13 +524,16 @@ create policy roteiros_apagar on roteiros
     (usuario_id = auth.uid()) or (usuario_id is null and eh_curador())
   );
 
--- roteiro_paradas não tem usuario_id próprio — a visibilidade segue o
--- roteiro pai, senão a parada de um roteiro gerado privado vazaria por
--- fora da política acima.
+-- roteiro_paradas não tem usuario_id próprio, então segue o roteiro pai —
+-- mas LEITURA e ESCRITA precisam de políticas separadas. Uma política
+-- única com FOR ALL (como uma primeira versão deste arquivo tinha) usaria
+-- a mesma condição pras duas coisas, e "roteiro público" (usuario_id nulo)
+-- viraria também "qualquer um pode inserir/editar/apagar parada de roteiro
+-- de outra pessoa" — leitura pública não é permissão de escrita.
 alter table roteiro_paradas enable row level security;
 
-create policy roteiro_paradas_seguir_roteiro on roteiro_paradas
-  for all using (
+create policy roteiro_paradas_leitura on roteiro_paradas
+  for select using (
     exists (
       select 1 from roteiros r
       where r.id = roteiro_paradas.roteiro_id
@@ -518,8 +541,55 @@ create policy roteiro_paradas_seguir_roteiro on roteiro_paradas
     )
   );
 
--- tags_diversidade, acessibilidade, ambiente_sensorial, eventos e
--- locais_tags ficam de fora desta primeira passada de RLS — são conteúdo
--- de catálogo, de leitura pública por natureza, sem dado de pessoa.
--- Ativar RLS neles (e travar escrita a curador) é decisão em aberto, ver
--- docs/ESTADO.md.
+create policy roteiro_paradas_criar on roteiro_paradas
+  for insert with check (
+    exists (
+      select 1 from roteiros r
+      where r.id = roteiro_paradas.roteiro_id
+        and (r.usuario_id = auth.uid() or (r.usuario_id is null and eh_curador()))
+    )
+  );
+
+create policy roteiro_paradas_editar on roteiro_paradas
+  for update using (
+    exists (
+      select 1 from roteiros r
+      where r.id = roteiro_paradas.roteiro_id
+        and (r.usuario_id = auth.uid() or (r.usuario_id is null and eh_curador()))
+    )
+  );
+
+create policy roteiro_paradas_apagar on roteiro_paradas
+  for delete using (
+    exists (
+      select 1 from roteiros r
+      where r.id = roteiro_paradas.roteiro_id
+        and (r.usuario_id = auth.uid() or (r.usuario_id is null and eh_curador()))
+    )
+  );
+
+-- Catálogo de apoio (tags, acessibilidade, ambiente sensorial, eventos e
+-- a ligação lugar-tag): sem dado de pessoa, então leitura é pública — mas
+-- escrita sem trava nenhuma deixa qualquer usuário autenticado (a
+-- depender dos GRANTs do projeto) alterar ou apagar o catálogo inteiro,
+-- inclusive por cascata (apagar uma tag remove locais_tags junto).
+alter table tags_diversidade enable row level security;
+alter table locais_tags enable row level security;
+alter table acessibilidade enable row level security;
+alter table ambiente_sensorial enable row level security;
+alter table eventos enable row level security;
+
+create policy tags_diversidade_leitura on tags_diversidade for select using (true);
+create policy tags_diversidade_escrita on tags_diversidade for all using (eh_curador());
+
+create policy locais_tags_leitura on locais_tags for select using (true);
+create policy locais_tags_escrita on locais_tags for all using (eh_curador());
+
+create policy acessibilidade_leitura on acessibilidade for select using (true);
+create policy acessibilidade_escrita on acessibilidade for all using (eh_curador());
+
+create policy ambiente_sensorial_leitura on ambiente_sensorial for select using (true);
+create policy ambiente_sensorial_escrita on ambiente_sensorial for all using (eh_curador());
+
+create policy eventos_leitura on eventos for select using (true);
+create policy eventos_escrita on eventos for all using (eh_curador());
