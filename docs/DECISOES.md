@@ -174,3 +174,59 @@ De quebra, a auditoria também achou seis tabelas com RLS ligado mas sem
 `preferencias`, `avaliacoes`, `roteiros`) — sem `FORCE`, o dono da tabela
 ignora as políticas. No Supabase isso raramente importa na prática, mas é
 defesa em profundidade barata, então entrou junto nesta correção.
+
+---
+
+## 8. Tudo que aponta para `locais` se divide em só dois grupos, e `locais` ganha arquivamento
+
+Data: 14/09/2026
+
+Uma segunda auditoria, já em cima da main mergeada, achou duas coisas que a
+decisão 7 tinha deixado incoerentes entre si.
+
+**A primeira: seis referências a `locais` com quatro políticas de exclusão
+diferentes**, e duas delas nunca executavam. `favoritos.local_id` e
+`avaliacoes.local_id` estavam com `cascade` (a decisão 7 dizia isso —
+estava errada nesse ponto específico), mas como `visitas.local_id` e
+`roteiro_paradas.local_id` já bloqueavam a exclusão com `restrict`, a
+cascata nunca chegava a rodar de verdade. E `eventos.local_id` e
+`revisoes_local.local_id` faziam `set null`, o que deixava evento
+flutuando sem lugar e revisão de curadoria sem dizer mais o que revisou —
+prova em teste real: apagar um local deixava a revisão viva com
+`local_id` nulo.
+
+A correção simplifica pra dois grupos, e só dois:
+
+- **Cascata**, pro que é do próprio lugar e morre com ele:
+  `locais_tags`, `acessibilidade`, `ambiente_sensorial`,
+  `sugestoes_local.local_id` (já estava certo nesse).
+- **Restrict**, pra histórico de pessoa e de curadoria, que não pode
+  sumir em silêncio: `favoritos.local_id`, `avaliacoes.local_id`,
+  `visitas.local_id`, `roteiro_paradas.local_id`, `eventos.local_id`,
+  `revisoes_local.local_id`. `revisoes_local.local_id` continua aceitando
+  nulo — nulo ali significa "proposta de local novo, ainda sem registro em
+  `locais`", que é outra coisa e não mudou.
+
+**A segunda: a decisão 7 dizia "lugar não se apaga, se despublica", mas
+não existia despublicar.** `locais` não tinha nenhuma coluna de
+publicação, arquivamento ou status, e a leitura pública era
+`using (true)` sem filtro nenhum. Um lugar cadastrado errado, uma vez
+favoritado por alguém, ficava preso pra sempre — `restrict` bloqueia o
+DELETE, mas não existia outro caminho de saída.
+
+`locais` ganha `arquivado_em timestamptz` (nulo = publicado). A política
+de leitura pública passa a filtrar por `arquivado_em is null`, exceto pra
+curador, que continua vendo o lugar arquivado — é ele quem desarquiva.
+DELETE em `locais` continua sem política nenhuma, de propósito: apagar
+lugar nunca foi o caminho certo, e agora existe o caminho certo pra valer.
+
+E o `usuarios` ficou de fora da lista de `FORCE ROW LEVEL SECURITY` da
+decisão 7 por engano — guarda dado de pessoa (nome, papel) igual às
+outras seis. Entrou junto nesta correção.
+
+Comportamento verificado com linha real, não só DDL: apagar um lugar
+favoritado falha por `favoritos_local_id_fkey`; arquivar um lugar some da
+leitura pública mas continua visível pro curador; apagar a conta de quem
+curou mantém o lugar e a revisão vivos, só com autoria nula; isolamento de
+RLS entre duas usuárias continua intacto depois da mudança na política de
+`locais`.

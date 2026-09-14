@@ -178,11 +178,12 @@
 
       <div class="card">
         <div class="card-top"><h3>locais</h3><span class="badge existia">já existia</span></div>
-        <p class="card-purpose">O centro do app — cada lugar, com história, fonte e aviso de visitação.</p>
+        <p class="card-purpose">O centro do app — nunca é apagado, só arquivado.</p>
         <ul class="fields">
           <li><b>id</b> <span class="type">uuid · pk</span></li>
           <li><b>por_que_conhecer, historia, fonte</b> <span class="type">obrigatórios</span></li>
           <li><b>geom</b> <span class="type">índice espacial p/ busca por proximidade</span></li>
+          <li><b>arquivado_em</b> <span class="type">nulo = publicado; preenchido = some da leitura pública</span></li>
           <li><b>criado_por</b> <span class="fk">→ usuarios</span> <span class="type">(nulo se a conta foi apagada)</span></li>
         </ul>
       </div>

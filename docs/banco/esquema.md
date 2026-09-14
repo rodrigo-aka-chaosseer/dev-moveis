@@ -54,7 +54,9 @@ atividade e comunidades tradicionais. Esses quatro últimos campos
 continuam obrigatórios: é a decisão 3 do projeto, e ela não muda aqui.
 Ganhou um campo de latitude/longitude convertido automaticamente num
 formato geográfico, que é o que permite buscar "lugares perto de mim" sem
-escanear a tabela inteira.
+escanear a tabela inteira. Ganhou também `arquivado_em`: um lugar nunca é
+apagado (ver "O que acontece ao apagar uma conta..." abaixo), só arquivado
+— nulo é publicado, preenchido some da leitura pública.
 
 ### `tags_diversidade` — já existia, sem mudança de fundo
 Vocabulário fixo de diversidade: indígena, afro-brasileira, religiosa,
@@ -150,41 +152,47 @@ deste desenho, e vale contar o que era o furo, não só o que ficou:
   usuário autenticado podia alterar ou apagar o catálogo inteiro (inclusive
   por cascata, apagando uma tag). Leitura pública, escrita só curador.
 
-Uma auditoria independente (rodando o DDL de verdade fora do Supabase)
-achou mais duas coisas, nenhuma bloqueante, as duas já corrigidas: seis
-tabelas de dado pessoal (`visitas`, `favoritos`, `sugestoes_local`,
+Duas auditorias independentes (rodando o DDL de verdade fora do Supabase,
+em dois momentos) acharam coisas que já estão corrigidas: sete tabelas de
+dado pessoal (`usuarios`, `visitas`, `favoritos`, `sugestoes_local`,
 `preferencias`, `avaliacoes`, `roteiros`) tinham RLS ligado mas não
 `FORCE ROW LEVEL SECURITY` — sem `FORCE`, o dono da tabela passa por cima
 de toda política. No Supabase isso raramente aparece na prática, mas é
-defesa em profundidade barata. A outra foi a política de exclusão de conta,
-que virou sua própria seção abaixo.
+defesa em profundidade barata. A segunda auditoria também achou que a
+política de exclusão em volta de `locais` tinha quatro regras diferentes
+apontando pro mesmo lugar — duas delas nunca chegavam a executar — e que
+"lugar se despublica, não se apaga" (decisão 7) não tinha, de fato, um
+despublicar. As duas coisas viraram a seção abaixo.
 
-## O que acontece ao apagar uma conta
+## O que acontece ao apagar uma conta, e o que acontece ao tirar um lugar de cena
 
-Curadoria é o ativo mais caro do projeto (decisão 3 e decisão 7 de
+Curadoria é o ativo mais caro do projeto (decisões 3, 7 e 8 de
 `docs/DECISOES.md`). Apagar a conta de alguém não pode apagar o que essa
-pessoa cadastrou — então a exclusão de um usuário se comporta de três jeitos
-diferentes, dependendo do que a linha apagada representa:
+pessoa cadastrou, e um lugar nunca é apagado — só arquivado. As duas regras
+trabalham juntas:
 
-- **Some junto.** `favoritos`, `preferencias`, `visitas`, `roteiros` (e as
-  paradas desses roteiros) e `avaliacoes` são dado puramente pessoal, sem
-  valor nenhum fora do dono. Apagar a conta apaga tudo isso — é exatamente
-  o "direito ao esquecimento" funcionando.
-- **A autoria vira nula, o conteúdo fica.** Quem cadastrou um lugar
-  (`locais.criado_por`), quem escreveu ou revisou uma curadoria
+- **Dado pessoal some com a conta.** `favoritos`, `preferencias`, `visitas`,
+  `roteiros` (e as paradas desses roteiros) e `avaliacoes` são dado
+  puramente pessoal, sem valor nenhum fora do dono. Apagar a conta apaga
+  tudo isso — é o "direito ao esquecimento" funcionando.
+- **A autoria vira nula, o conteúdo de curadoria fica.** Quem cadastrou um
+  lugar (`locais.criado_por`), quem escreveu ou revisou uma curadoria
   (`revisoes_local.autor_id`, `revisoes_local.revisado_por`) e quem sugeriu
   ou avaliou uma sugestão (`sugestoes_local.usuario_id`,
   `sugestoes_local.revisado_por`) some da autoria, mas o lugar, a revisão e
-  a sugestão continuam existindo. Um local não tem dono nenhum de propósito
-  quando isso acontece — é o mesmo estado do conteúdo de carga inicial, que
-  nunca teve curador.
-- **Local não se apaga em silêncio.** Um lugar não deveria ser removido em
-  produção — o certo é despublicar. Se mesmo assim alguém tentar apagar um
-  local que é parada de algum roteiro (`roteiro_paradas`) ou tem visita
-  registrada (`visitas`), o banco recusa com erro de chave estrangeira. É
-  intencional: silenciosamente sumir com a parada de um roteiro ou a
-  lembrança de visita de alguém é pior do que a operação falhar e alguém
-  decidir o que fazer.
+  a sugestão continuam existindo — é o mesmo estado do conteúdo de carga
+  inicial, que nunca teve curador.
+- **Lugar nunca se apaga — só arquiva.** Tudo que é histórico de pessoa ou
+  de curadoria sobre um lugar (`favoritos`, `avaliacoes`, `visitas`,
+  `roteiro_paradas`, `eventos`, `revisoes_local`) bloqueia a exclusão desse
+  lugar com erro de chave estrangeira — silenciosamente sumir com o
+  favorito, a visita ou a revisão de alguém é pior do que a operação falhar.
+  O caminho de verdade pra tirar um lugar errado de cena é `locais.arquivado_em`:
+  preenchido, o lugar some da leitura pública mas continua existindo (e
+  visível pro curador, que é quem desarquiva se for o caso). O que é *do*
+  próprio lugar e não faz sentido sem ele — as tags de diversidade, a
+  acessibilidade, o ambiente sensorial, uma sugestão que virou esse lugar —
+  esses sim cascateiam quando o lugar (hipoteticamente) some.
 
 ## Observação sobre relacionamento e chave estrangeira
 
