@@ -148,7 +148,10 @@ create table locais (
   aviso_visitacao text,
 
   fonte text not null check (length(trim(fonte)) > 0),
-  criado_por uuid references usuarios (id),
+  -- Apagar a conta de quem cadastrou não pode apagar o que ela cadastrou —
+  -- o conteúdo curado é o ativo mais caro do projeto. Autoria vira nula,
+  -- o local continua (decisão 3 em docs/DECISOES.md).
+  criado_por uuid references usuarios (id) on delete set null,
   atualizado_em timestamptz not null default now(),
 
   imagem_url text,
@@ -254,10 +257,14 @@ create index idx_eventos_inicio on eventos (inicio_em);
 create table revisoes_local (
   id uuid primary key default gen_random_uuid(),
   local_id uuid references locais (id) on delete set null,
-  autor_id uuid not null references usuarios (id),
+  -- Nullable de propósito: quando a conta de quem escreveu a revisão é
+  -- apagada, a autoria vira nula em vez de apagar a revisão junto — o
+  -- histórico de curadoria não é dado pessoal descartável (decisão 3).
+  -- A leitura precisa tratar autor_id nulo como "autoria removida".
+  autor_id uuid references usuarios (id) on delete set null,
   status status_revisao not null default 'rascunho',
   payload jsonb not null,
-  revisado_por uuid references usuarios (id),
+  revisado_por uuid references usuarios (id) on delete set null,
   revisado_em timestamptz,
   motivo_rejeicao text,
   criado_em timestamptz not null default now()
@@ -278,7 +285,11 @@ create index idx_revisoes_local_local on revisoes_local (local_id);
 -- que acontece depois, se a sugestão virar local de verdade.
 create table sugestoes_local (
   id uuid primary key default gen_random_uuid(),
-  usuario_id uuid not null references usuarios (id),
+  -- Nullable de propósito, igual a revisoes_local.autor_id: apagar a
+  -- conta de quem sugeriu não apaga a sugestão, só some a autoria dela
+  -- (decisão 3). A leitura precisa tratar usuario_id nulo como "autoria
+  -- removida", não como sugestão órfã inválida.
+  usuario_id uuid references usuarios (id) on delete set null,
   nome_sugerido text not null check (length(trim(nome_sugerido)) > 0),
   categoria_sugerida categoria_local not null,
   latitude double precision not null check (latitude between -90 and 90),
@@ -286,8 +297,11 @@ create table sugestoes_local (
   endereco_sugerido text,
   motivo text not null check (length(trim(motivo)) > 0),
   status status_sugestao not null default 'pendente',
-  local_id uuid references locais (id),
-  revisado_por uuid references usuarios (id),
+  -- Diferente de roteiro_paradas.local_id e visitas.local_id: uma
+  -- sugestão sem o lugar que ela virou não tem sentido nenhum, então
+  -- cascateia — apagar o local apaga a sugestão que apontava pra ele.
+  local_id uuid references locais (id) on delete cascade,
+  revisado_por uuid references usuarios (id) on delete set null,
   revisado_em timestamptz,
   motivo_rejeicao text,
   criado_em timestamptz not null default now()
@@ -333,7 +347,11 @@ create table favoritos (
 create table visitas (
   id uuid primary key default gen_random_uuid(),
   usuario_id uuid not null references usuarios (id) on delete cascade,
-  local_id uuid not null references locais (id),
+  -- `on delete restrict` explícito, não omissão: local não deveria ser
+  -- apagado em produção (o certo é despublicar), então apagar um local
+  -- que tem visita registrada tem que falhar alto, não sumir em silêncio
+  -- levando a lembrança de alguém junto (decisão 3).
+  local_id uuid not null references locais (id) on delete restrict,
   visitado_em timestamptz not null,
   anotacao text,
   foto_uri text
@@ -394,7 +412,11 @@ comment on constraint roteiro_dono_condiz_com_tipo on roteiros is
 
 create table roteiro_paradas (
   roteiro_id uuid not null references roteiros (id) on delete cascade,
-  local_id uuid not null references locais (id),
+  -- `on delete restrict` explícito, mesmo motivo de visitas.local_id: um
+  -- local não deveria ser apagado (o certo é despublicar); se alguém
+  -- tentar mesmo assim e ele for parada de algum roteiro, a exclusão
+  -- precisa falhar, não silenciosamente arrebentar o roteiro de alguém.
+  local_id uuid not null references locais (id) on delete restrict,
   ordem integer not null check (ordem > 0),
   hora_sugerida time,
   duracao_min integer not null check (duracao_min > 0),
@@ -420,6 +442,17 @@ alter table avaliacoes enable row level security;
 alter table locais enable row level security;
 alter table revisoes_local enable row level security;
 alter table sugestoes_local enable row level security;
+
+-- FORCE além de ENABLE: sem isso, o DONO da tabela (quem rodou este DDL)
+-- passa por cima de toda policy — na prática só importa se alguém rodar
+-- uma query com a role dona da tabela em vez de authenticated/anon, o que
+-- o Supabase evita, mas é defesa em profundidade barata nas seis tabelas
+-- que guardam dado de pessoa de verdade (não catálogo público).
+alter table preferencias force row level security;
+alter table favoritos force row level security;
+alter table visitas force row level security;
+alter table avaliacoes force row level security;
+alter table sugestoes_local force row level security;
 
 -- Helper: papel do usuário autenticado na requisição atual.
 create function eh_curador()
@@ -507,6 +540,7 @@ create policy sugestoes_avaliar_curador on sugestoes_local
 -- alguém revela onde essa pessoa foi ou pretende ir, e não pode vazar pra
 -- outro usuário nem ser editado por ele.
 alter table roteiros enable row level security;
+alter table roteiros force row level security;
 
 create policy roteiros_leitura on roteiros
   for select using (usuario_id is null or usuario_id = auth.uid());

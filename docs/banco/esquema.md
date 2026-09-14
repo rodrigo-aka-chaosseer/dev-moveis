@@ -150,6 +150,42 @@ deste desenho, e vale contar o que era o furo, não só o que ficou:
   usuário autenticado podia alterar ou apagar o catálogo inteiro (inclusive
   por cascata, apagando uma tag). Leitura pública, escrita só curador.
 
+Uma auditoria independente (rodando o DDL de verdade fora do Supabase)
+achou mais duas coisas, nenhuma bloqueante, as duas já corrigidas: seis
+tabelas de dado pessoal (`visitas`, `favoritos`, `sugestoes_local`,
+`preferencias`, `avaliacoes`, `roteiros`) tinham RLS ligado mas não
+`FORCE ROW LEVEL SECURITY` — sem `FORCE`, o dono da tabela passa por cima
+de toda política. No Supabase isso raramente aparece na prática, mas é
+defesa em profundidade barata. A outra foi a política de exclusão de conta,
+que virou sua própria seção abaixo.
+
+## O que acontece ao apagar uma conta
+
+Curadoria é o ativo mais caro do projeto (decisão 3 e decisão 7 de
+`docs/DECISOES.md`). Apagar a conta de alguém não pode apagar o que essa
+pessoa cadastrou — então a exclusão de um usuário se comporta de três jeitos
+diferentes, dependendo do que a linha apagada representa:
+
+- **Some junto.** `favoritos`, `preferencias`, `visitas`, `roteiros` (e as
+  paradas desses roteiros) e `avaliacoes` são dado puramente pessoal, sem
+  valor nenhum fora do dono. Apagar a conta apaga tudo isso — é exatamente
+  o "direito ao esquecimento" funcionando.
+- **A autoria vira nula, o conteúdo fica.** Quem cadastrou um lugar
+  (`locais.criado_por`), quem escreveu ou revisou uma curadoria
+  (`revisoes_local.autor_id`, `revisoes_local.revisado_por`) e quem sugeriu
+  ou avaliou uma sugestão (`sugestoes_local.usuario_id`,
+  `sugestoes_local.revisado_por`) some da autoria, mas o lugar, a revisão e
+  a sugestão continuam existindo. Um local não tem dono nenhum de propósito
+  quando isso acontece — é o mesmo estado do conteúdo de carga inicial, que
+  nunca teve curador.
+- **Local não se apaga em silêncio.** Um lugar não deveria ser removido em
+  produção — o certo é despublicar. Se mesmo assim alguém tentar apagar um
+  local que é parada de algum roteiro (`roteiro_paradas`) ou tem visita
+  registrada (`visitas`), o banco recusa com erro de chave estrangeira. É
+  intencional: silenciosamente sumir com a parada de um roteiro ou a
+  lembrança de visita de alguém é pior do que a operação falhar e alguém
+  decidir o que fazer.
+
 ## Observação sobre relacionamento e chave estrangeira
 
 O enunciado da atividade dispensa mostrar relacionamento no desenho, mas eles

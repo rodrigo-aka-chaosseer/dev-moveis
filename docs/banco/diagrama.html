@@ -183,7 +183,7 @@
           <li><b>id</b> <span class="type">uuid · pk</span></li>
           <li><b>por_que_conhecer, historia, fonte</b> <span class="type">obrigatórios</span></li>
           <li><b>geom</b> <span class="type">índice espacial p/ busca por proximidade</span></li>
-          <li><b>criado_por</b> <span class="fk">→ usuarios</span></li>
+          <li><b>criado_por</b> <span class="fk">→ usuarios</span> <span class="type">(nulo se a conta foi apagada)</span></li>
         </ul>
       </div>
 
@@ -227,7 +227,7 @@
         <div class="card-top"><h3>revisoes_local</h3><span class="badge novo">novo</span></div>
         <p class="card-purpose">Fluxo de curadoria — todo lugar passa por aqui antes de valer.</p>
         <ul class="fields">
-          <li><b>autor_id</b> <span class="fk">→ usuarios</span></li>
+          <li><b>autor_id</b> <span class="fk">→ usuarios</span> <span class="type">(nulo se a conta foi apagada)</span></li>
           <li><b>status</b> <span class="type">rascunho → em revisão → publicado</span></li>
           <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">(nulo = proposta nova)</span></li>
         </ul>
@@ -237,9 +237,9 @@
         <div class="card-top"><h3>sugestoes_local</h3><span class="badge novo">novo</span></div>
         <p class="card-purpose">Sugestão de lugar pela comunidade, não só pelo time de curadoria.</p>
         <ul class="fields">
-          <li><b>usuario_id</b> <span class="fk">→ usuarios</span></li>
+          <li><b>usuario_id</b> <span class="fk">→ usuarios</span> <span class="type">(nulo se a conta foi apagada)</span></li>
           <li><b>status</b> <span class="type">pendente / aprovada / rejeitada</span></li>
-          <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">(quando aceita)</span></li>
+          <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">(cascateia — some se o lugar for apagado)</span></li>
         </ul>
       </div>
 

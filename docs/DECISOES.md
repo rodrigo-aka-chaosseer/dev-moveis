@@ -110,3 +110,67 @@ nem listagem pública.
 A migração de `src/db/schema.ts` de SQLite para Postgres é uma task própria
 da semana, não desta entrega. Até ela rodar, o app continua sem persistência
 real, exatamente como hoje.
+
+---
+
+## 6. Curadoria roda sem trigger de processo, e curador pode aprovar a própria revisão
+
+Data: 14/09/2026
+
+Duas perguntas que a auditoria do esquema (PR #18) levantou, decididas juntas
+porque são a mesma aposta: quanto travar o processo de curadoria vale a pena
+pro tamanho do time hoje.
+
+**Trigger forçando toda alteração em `locais` a nascer como revisão:** não
+implementado agora. `revisoes_local` existe e é o caminho esperado, mas o
+banco não impede um curador de escrever direto em `locais`. Com quatro
+pessoas, o risco de alteração descuidada é baixo, e trigger de processo em
+time pequeno atrapalha mais do que protege — o custo de tirar depois é maior
+que o de colocar quando começar a doer.
+
+**Curador pode aprovar a própria revisão:** pode. Exigir revisor distinto
+trava o fluxo mais do que ganha em qualidade nesse tamanho de time.
+
+Os dois são risco aceito conscientemente, não esquecimento. O gatilho pra
+revisitar os dois é o mesmo: **quando houver colaborador fora do grupo
+escrevendo em `locais`** — aí o trigger de processo e a exigência de revisor
+distinto passam a valer o atrito que custam.
+
+---
+
+## 7. Conta apagada anonimiza autoria, não cascateia em cima da curadoria
+
+Data: 14/09/2026
+
+A auditoria do esquema achou oito chaves estrangeiras sem política de
+`ON DELETE` — hoje elas assumem `NO ACTION`, ou seja, apagar um usuário
+falha com erro de integridade em vez de decidir alguma coisa. Isso precisava
+de uma regra, e a regra depende do que cada FK realmente representa.
+
+O ativo mais caro do projeto é o conteúdo curado (decisão 3). Apagar a conta
+de quem cadastrou um lugar não pode apagar o lugar. Por isso:
+
+- **Cascata** (`on delete cascade`) pro que é puramente pessoal e sem valor
+  fora do dono: `favoritos`, `preferencias`, `visitas`, `roteiros` (e
+  `roteiro_paradas` por consequência do roteiro), `avaliacoes`. Já estava
+  assim pra a maioria; ficou explícito em todas.
+- **Autoria vira nula** (`on delete set null`) pra curadoria: `locais.criado_por`,
+  `revisoes_local.autor_id`, `revisoes_local.revisado_por`,
+  `sugestoes_local.usuario_id`, `sugestoes_local.revisado_por`. O registro
+  continua existindo — só a autoria some. `revisoes_local.autor_id` e
+  `sugestoes_local.usuario_id` deixaram de ser `not null` pra isso funcionar;
+  toda leitura desses campos precisa tratar nulo como "autoria removida", não
+  como dado corrompido.
+- **Referência a lugar não é referência a usuário**, e as duas ganharam regras
+  diferentes: `roteiro_paradas.local_id` e `visitas.local_id` mantêm a falha
+  por integridade (`on delete restrict`, explícito no SQL) — um lugar não
+  deveria ser apagado em produção, o certo é despublicar, então tentar
+  apagar um lugar que é parada de roteiro ou tem visita registrada tem que
+  falhar alto. Já `sugestoes_local.local_id` cascateia: uma sugestão sem o
+  lugar que ela virou não tem sentido nenhum.
+
+De quebra, a auditoria também achou seis tabelas com RLS ligado mas sem
+`FORCE ROW LEVEL SECURITY` (`visitas`, `favoritos`, `sugestoes_local`,
+`preferencias`, `avaliacoes`, `roteiros`) — sem `FORCE`, o dono da tabela
+ignora as políticas. No Supabase isso raramente importa na prática, mas é
+defesa em profundidade barata, então entrou junto nesta correção.
