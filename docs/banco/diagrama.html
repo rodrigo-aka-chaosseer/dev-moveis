@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Esquema do banco — Raízes no Supabase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --accent: #d4622a;
+    --accent-dark: #9a3412;
+    --earth: #5c3d2e;
+    --surface: #ffffff;
+    --surface2: #faf7f4;
+    --surface3: #e7e1dc;
+    --accent-soft: #fff7ed;
+    --accent-tint: #ffeadb;
+    --text: #1c1917;
+    --text-muted: #78716c;
+    --on-dark: #ffffff;
+    --on-dark-muted: rgba(255,255,255,0.78);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface2);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--text);
+    width: 2480px;
+  }
+  .wrap { padding: 56px 64px 72px; }
+
+  header {
+    background: var(--earth);
+    border-radius: 20px;
+    padding: 40px 48px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  header h1 {
+    color: var(--on-dark);
+    font-size: 40px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  header .meta {
+    color: var(--on-dark-muted);
+    font-size: 19px;
+    font-weight: 500;
+    text-align: right;
+    line-height: 1.5;
+  }
+  header .meta strong { color: var(--on-dark); font-weight: 700; }
+
+  .zone { margin-bottom: 36px; }
+  .zone-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 28px;
+    border-radius: 14px 14px 0 0;
+    color: var(--on-dark);
+  }
+  .zone-head h2 { font-size: 24px; font-weight: 700; margin: 0; }
+  .zone-head span.count {
+    font-size: 15px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.22);
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+  .zone-1 .zone-head { background: var(--accent); }
+  .zone-2 .zone-head { background: var(--earth); }
+  .zone-3 .zone-head { background: var(--accent-dark); }
+
+  .zone-body {
+    background: var(--surface);
+    border: 1px solid var(--surface3);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    padding: 28px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+    gap: 22px;
+  }
+
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--surface3);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .card-top h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--earth);
+    font-family: monospace, 'Plus Jakarta Sans';
+    letter-spacing: -0.01em;
+  }
+  .badge {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.novo { background: var(--accent-tint); color: var(--accent-dark); }
+  .badge.existia { background: var(--surface3); color: var(--text-muted); }
+
+  .card-purpose {
+    font-size: 17px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin: 0 0 14px;
+    line-height: 1.4;
+  }
+
+  .fields { list-style: none; margin: 0; padding: 0; }
+  .fields li {
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text);
+    padding-left: 18px;
+    position: relative;
+  }
+  .fields li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--surface3);
+  }
+  .fields b { font-weight: 700; }
+  .fields .type { color: var(--text-muted); font-weight: 500; }
+  .fields .fk { color: var(--accent-dark); font-weight: 700; }
+
+  footer {
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+    font-size: 16px;
+    color: var(--text-muted);
+  }
+  footer .legend span { margin-right: 28px; }
+  footer .legend b.fk-dot { color: var(--accent-dark); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Esquema do banco — Raízes no Supabase</h1>
+    <div class="meta">
+      <strong>Postgres · Supabase</strong><br />
+      15 tabelas · decisão 5 · RAÍZES-09
+    </div>
+  </header>
+
+  <div class="zone zone-1">
+    <div class="zone-head"><h2>Lugar e contexto cultural</h2><span class="count">7 tabelas</span></div>
+    <div class="zone-body">
+
+      <div class="card">
+        <div class="card-top"><h3>locais</h3><span class="badge existia">já existia</span></div>
+        <p class="card-purpose">O centro do app — cada lugar, com história, fonte e aviso de visitação.</p>
+        <ul class="fields">
+          <li><b>id</b> <span class="type">uuid · pk</span></li>
+          <li><b>por_que_conhecer, historia, fonte</b> <span class="type">obrigatórios</span></li>
+          <li><b>geom</b> <span class="type">índice espacial p/ busca por proximidade</span></li>
+          <li><b>criado_por</b> <span class="fk">→ usuarios</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>tags_diversidade</h3><span class="badge existia">já existia</span></div>
+        <p class="card-purpose">Vocabulário fixo de diversidade.</p>
+        <ul class="fields">
+          <li><b>id</b> <span class="type">text · pk (slug)</span></li>
+          <li><b>dimensao</b> <span class="type">indígena, afro-brasileira, religiosa...</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>locais_tags</h3><span class="badge existia">já existia</span></div>
+        <p class="card-purpose">Liga um lugar às tags de diversidade que se aplicam a ele.</p>
+        <ul class="fields">
+          <li><b>local_id</b> <span class="fk">→ locais</span></li>
+          <li><b>tag_id</b> <span class="fk">→ tags_diversidade</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>acessibilidade</h3><span class="badge existia">já existia</span></div>
+        <p class="card-purpose">Estrutura física do lugar — informação pública.</p>
+        <ul class="fields">
+          <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">· pk</span></li>
+          <li><b>rampa, elevador, banheiro, piso tátil, Libras, Braille...</b></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>ambiente_sensorial</h3><span class="badge existia">já existia</span></div>
+        <p class="card-purpose">Ruído, luz, movimento — conforto sensorial, não diagnóstico.</p>
+        <ul class="fields">
+          <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">· pk</span></li>
+          <li><b>ruido, iluminacao, movimentacao, tem_fila</b></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>revisoes_local</h3><span class="badge novo">novo</span></div>
+        <p class="card-purpose">Fluxo de curadoria — todo lugar passa por aqui antes de valer.</p>
+        <ul class="fields">
+          <li><b>autor_id</b> <span class="fk">→ usuarios</span></li>
+          <li><b>status</b> <span class="type">rascunho → em revisão → publicado</span></li>
+          <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">(nulo = proposta nova)</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>sugestoes_local</h3><span class="badge novo">novo</span></div>
+        <p class="card-purpose">Sugestão de lugar pela comunidade, não só pelo time de curadoria.</p>
+        <ul class="fields">
+          <li><b>usuario_id</b> <span class="fk">→ usuarios</span></li>
+          <li><b>status</b> <span class="type">pendente / aprovada / rejeitada</span></li>
+          <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">(quando aceita)</span></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="zone zone-2">
+    <div class="zone-head"><h2>Pessoa e preferências</h2><span class="count">5 tabelas</span></div>
+    <div class="zone-body">
+
+      <div class="card">
+        <div class="card-top"><h3>usuarios</h3><span class="badge novo">novo</span></div>
+        <p class="card-purpose">Perfil de quem tem conta — sem senha, isso é do Supabase Auth.</p>
+        <ul class="fields">
+          <li><b>id</b> <span class="fk">→ auth.users</span></li>
+          <li><b>papel</b> <span class="type">membro / curador</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>preferencias</h3><span class="badge existia">ganhou dono</span></div>
+        <p class="card-purpose">Interesses, deslocamento, acessibilidade — dado sensível.</p>
+        <ul class="fields">
+          <li><b>usuario_id</b> <span class="fk">→ usuarios</span> <span class="type">· pk</span></li>
+          <li><b>necessidades_acessibilidade</b> <span class="type">privado, só o dono lê</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>favoritos</h3><span class="badge existia">ganhou dono</span></div>
+        <p class="card-purpose">Lugares que a pessoa quer lembrar depois.</p>
+        <ul class="fields">
+          <li><b>usuario_id</b> <span class="fk">→ usuarios</span></li>
+          <li><b>local_id</b> <span class="fk">→ locais</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>visitas</h3><span class="badge existia">ganhou dono</span></div>
+        <p class="card-purpose">Passaporte Cultural — descoberta pessoal, nunca vira ranking.</p>
+        <ul class="fields">
+          <li><b>usuario_id</b> <span class="fk">→ usuarios</span></li>
+          <li><b>local_id</b> <span class="fk">→ locais</span></li>
+          <li><b>anotacao, foto_uri</b> <span class="type">privados</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>avaliacoes</h3><span class="badge novo">novo</span></div>
+        <p class="card-purpose">Nota e comentário público sobre um lugar — não é o passaporte.</p>
+        <ul class="fields">
+          <li><b>usuario_id</b> <span class="fk">→ usuarios</span></li>
+          <li><b>local_id</b> <span class="fk">→ locais</span></li>
+          <li><b>nota</b> <span class="type">1 a 5</span> <b>· comentario</b></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="zone zone-3">
+    <div class="zone-head"><h2>Roteiros e eventos</h2><span class="count">3 tabelas</span></div>
+    <div class="zone-body">
+
+      <div class="card">
+        <div class="card-top"><h3>roteiros</h3><span class="badge existia">ganhou dono opcional</span></div>
+        <p class="card-purpose">Temático (curado) ou gerado (de alguém) — mesma tabela.</p>
+        <ul class="fields">
+          <li><b>usuario_id</b> <span class="fk">→ usuarios</span> <span class="type">(nulo = temático)</span></li>
+          <li><b>tipo</b> <span class="type">tematico / gerado</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>roteiro_paradas</h3><span class="badge existia">já existia</span></div>
+        <p class="card-purpose">A sequência de lugares que compõe um roteiro.</p>
+        <ul class="fields">
+          <li><b>roteiro_id</b> <span class="fk">→ roteiros</span></li>
+          <li><b>local_id</b> <span class="fk">→ locais</span></li>
+          <li><b>ordem, duracao_min</b></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>eventos</h3><span class="badge existia">já existia</span></div>
+        <p class="card-purpose">Programação com data, ligada a um lugar (ou solta).</p>
+        <ul class="fields">
+          <li><b>local_id</b> <span class="fk">→ locais</span> <span class="type">(opcional)</span></li>
+          <li><b>inicio_em, fim_em, fonte</b></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="legend">
+      <span><b class="fk-dot">→ tabela</b> — chave estrangeira</span>
+      <span><span class="badge novo" style="padding:2px 9px;font-size:12px;">novo</span> tabela nova nesta entrega</span>
+      <span><span class="badge existia" style="padding:2px 9px;font-size:12px;">já existia</span> já estava em src/db/schema.ts</span>
+    </div>
+    <div>Raízes · docs/banco/esquema.sql</div>
+  </footer>
+
+</div>
+</body>
+</html>

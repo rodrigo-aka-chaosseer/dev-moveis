@@ -89,6 +89,27 @@ create trigger ao_criar_usuario
   after insert on auth.users
   for each row execute function lidar_novo_usuario();
 
+-- Sem isto, a política "usuarios_editar_proprio" abaixo deixaria qualquer
+-- pessoa virar curadora sozinha: bastaria um UPDATE na própria linha
+-- trocando `papel`. RLS não faz checagem por coluna, então quem barra a
+-- troca é este trigger — só passa se quem está rodando a operação for o
+-- service_role (painel do Supabase, nunca o app do celular).
+create function impedir_auto_promocao_papel()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.papel is distinct from old.papel and auth.role() <> 'service_role' then
+    raise exception 'papel não pode ser alterado pelo próprio usuário';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger usuarios_impedir_auto_promocao
+  before update on usuarios
+  for each row execute function impedir_auto_promocao_papel();
+
 
 -- ============================================================================
 -- DOMÍNIO: lugar e contexto cultural
@@ -441,10 +462,12 @@ create policy locais_escrita_curador on locais
 create policy locais_edicao_curador on locais
   for update using (eh_curador());
 
--- revisoes_local: curador vê e cria as próprias; qualquer curador pode
--- ver o que está em revisão (pra revisar o trabalho de outro).
-create policy revisoes_ver_proprias_ou_em_revisao on revisoes_local
-  for select using (autor_id = auth.uid() or status = 'em_revisao' or eh_curador());
+-- revisoes_local: autor vê a própria submissão em qualquer status; curador
+-- vê todas (inclusive rascunho e em revisão de outra pessoa, pra revisar).
+-- Um "membro" sem papel de curador NUNCA vê revisão alheia — mesmo em
+-- revisão, é conteúdo ainda não publicado.
+create policy revisoes_ver_proprias_ou_curador on revisoes_local
+  for select using (autor_id = auth.uid() or eh_curador());
 create policy revisoes_criar_curador on revisoes_local
   for insert with check (eh_curador() and autor_id = auth.uid());
 create policy revisoes_avaliar_curador on revisoes_local
@@ -459,8 +482,44 @@ create policy sugestoes_criar_propria on sugestoes_local
 create policy sugestoes_avaliar_curador on sugestoes_local
   for update using (eh_curador());
 
--- tags_diversidade, acessibilidade, ambiente_sensorial, eventos, roteiros
--- (temáticos), roteiro_paradas e locais_tags ficam de fora desta primeira
--- passada de RLS — são conteúdo de catálogo, de leitura pública por
--- natureza, sem dado de pessoa. Ativar RLS neles é decisão em aberto,
--- ver docs/ESTADO.md.
+-- roteiros: temático (usuario_id nulo) é catálogo público, igual a locais.
+-- Gerado (usuario_id preenchido) é dado de pessoa — o itinerário de
+-- alguém revela onde essa pessoa foi ou pretende ir, e não pode vazar pra
+-- outro usuário nem ser editado por ele.
+alter table roteiros enable row level security;
+
+create policy roteiros_leitura on roteiros
+  for select using (usuario_id is null or usuario_id = auth.uid());
+create policy roteiros_criar on roteiros
+  for insert with check (
+    (tipo = 'gerado' and usuario_id = auth.uid()) or
+    (tipo = 'tematico' and eh_curador())
+  );
+create policy roteiros_editar on roteiros
+  for update using (
+    (usuario_id = auth.uid()) or (usuario_id is null and eh_curador())
+  );
+create policy roteiros_apagar on roteiros
+  for delete using (
+    (usuario_id = auth.uid()) or (usuario_id is null and eh_curador())
+  );
+
+-- roteiro_paradas não tem usuario_id próprio — a visibilidade segue o
+-- roteiro pai, senão a parada de um roteiro gerado privado vazaria por
+-- fora da política acima.
+alter table roteiro_paradas enable row level security;
+
+create policy roteiro_paradas_seguir_roteiro on roteiro_paradas
+  for all using (
+    exists (
+      select 1 from roteiros r
+      where r.id = roteiro_paradas.roteiro_id
+        and (r.usuario_id is null or r.usuario_id = auth.uid())
+    )
+  );
+
+-- tags_diversidade, acessibilidade, ambiente_sensorial, eventos e
+-- locais_tags ficam de fora desta primeira passada de RLS — são conteúdo
+-- de catálogo, de leitura pública por natureza, sem dado de pessoa.
+-- Ativar RLS neles (e travar escrita a curador) é decisão em aberto, ver
+-- docs/ESTADO.md.

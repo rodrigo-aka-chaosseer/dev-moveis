@@ -109,6 +109,35 @@ tem.
 A sequência de lugares que compõe um roteiro, com a ordem de visita, duração
 sugerida em cada parada e horário sugerido opcional.
 
+## Row Level Security — o que fica travado
+
+Supabase deixa o app falar direto com o banco, sem servidor próprio no meio.
+Isso quer dizer que a única coisa impedindo um usuário de ler ou escrever a
+linha de outro é a política de RLS — sem ela, qualquer pessoa com a URL do
+projeto lê a tabela inteira. `esquema.sql` liga RLS em toda tabela com dado
+de pessoa: `usuarios`, `preferencias`, `favoritos`, `visitas`, `avaliacoes`,
+`locais`, `revisoes_local`, `sugestoes_local` e `roteiros`/`roteiro_paradas`
+(um roteiro gerado revela onde alguém foi ou quer ir — é dado de pessoa, não
+só conteúdo de catálogo).
+
+Três pontos que valem explicar porque não são óbvios à primeira leitura:
+
+- **Ninguém se promove a curador sozinho.** A política de edição do próprio
+  perfil deixa a pessoa trocar o nome de exibição, mas um gatilho separado
+  bloqueia a troca do campo `papel` fora do painel do Supabase — sem isso,
+  bastaria um usuário comum dar UPDATE na própria linha.
+- **Revisão em andamento não é pública.** Conteúdo em `revisoes_local` com
+  status "em revisão" só é visível pra quem escreveu ou pra curador — não
+  para qualquer usuário logado, mesmo que o rascunho já exista no banco.
+- **Roteiro gerado é privado por padrão.** Só o roteiro temático (curado
+  pelo time, sem dono) é público; o roteiro gerado por alguém só aparece
+  pra essa pessoa, e a tabela de paradas segue a mesma regra do roteiro pai.
+
+`tags_diversidade`, `acessibilidade`, `ambiente_sensorial`, `eventos` e
+`locais_tags` ainda não têm RLS — são conteúdo de catálogo público, sem dado
+de pessoa, mas travar a escrita a curador neles é decisão em aberto (ver
+`docs/ESTADO.md`).
+
 ## Observação sobre relacionamento e chave estrangeira
 
 O enunciado da atividade dispensa mostrar relacionamento no desenho, mas eles

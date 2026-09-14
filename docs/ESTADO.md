@@ -41,6 +41,11 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
    API e de development build. É o maior risco técnico do projeto.
 3. **Onde guardar o token na web.** No aparelho vai para `expo-secure-store`,
    mas ele não existe na web. Só importa quando houver back-end.
+4. **RLS nas tabelas de catálogo puro.** `tags_diversidade`, `acessibilidade`,
+   `ambiente_sensorial`, `eventos` e `locais_tags` ainda não têm Row Level
+   Security ligado — não guardam dado de pessoa, só conteúdo público, mas
+   deixar a escrita sem trava nenhuma (nem "só curador") é risco pra quando
+   o app for além do time de quatro. Ver `docs/banco/esquema.sql`.
 
 ## Backend (fechado — decisão 5)
 
