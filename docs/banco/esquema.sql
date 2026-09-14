@@ -157,6 +157,12 @@ create table locais (
   imagem_url text,
   audio_url text,
 
+  -- Lugar não se apaga — se apaga, quebra favorito, avaliação, visita,
+  -- roteiro e evento por RESTRICT de propósito (decisão 4). O caminho de
+  -- saída de verdade é este: nulo = publicado, preenchido = arquivado
+  -- (decisão 5). A policy de leitura pública abaixo filtra por isso.
+  arquivado_em timestamptz,
+
   constraint locais_gratuito_sem_preco check (not gratuito or preco_centavos is null or preco_centavos = 0)
 );
 
@@ -164,6 +170,8 @@ comment on column locais.criado_por is
   'Curador que publicou o registro, via revisoes_local. Nulo no conteúdo de carga inicial (seed), cadastrado antes de existir usuário curador.';
 comment on column locais.aviso_visitacao is
   'Segurança Cultural: aviso para espaços religiosos em atividade e comunidades tradicionais. Nulo = visitação livre, não "sem aviso a preencher".';
+comment on column locais.arquivado_em is
+  'Nulo = publicado e visível pra todo mundo. Preenchido = arquivado: some da leitura pública, mas continua existindo — é o caminho de tirar um lugar de cena sem apagar (decisão 5). Curador continua vendo, pra poder desarquivar.';
 
 create index idx_locais_geom on locais using gist (geom);
 create index idx_locais_categoria on locais (categoria);
@@ -232,7 +240,10 @@ create table ambiente_sensorial (
 
 create table eventos (
   id uuid primary key default gen_random_uuid(),
-  local_id uuid references locais (id) on delete set null,
+  -- `on delete restrict`, não set null: evento sem lugar fica flutuando
+  -- sem sentido (decisão 4) — apagar o lugar tem que falhar, não deixar
+  -- essa órfã. Lugar sai de cena arquivando, nunca apagando.
+  local_id uuid references locais (id) on delete restrict,
   titulo text not null,
   descricao text not null,
   inicio_em timestamptz not null,
@@ -256,7 +267,13 @@ create index idx_eventos_inicio on eventos (inicio_em);
 -- atualizado.
 create table revisoes_local (
   id uuid primary key default gen_random_uuid(),
-  local_id uuid references locais (id) on delete set null,
+  -- Nulo aqui é outra coisa: "proposta de local novo, ainda sem registro
+  -- em locais" — isso não muda. O que muda é o `on delete`: quando a
+  -- revisão JÁ aponta pra um local publicado, apagar esse local tem que
+  -- falhar, não apagar silenciosamente o que a revisão revisou (decisão 4).
+  -- Set null aqui deixaria uma revisão de curadoria sem dizer mais o que
+  -- foi revisado.
+  local_id uuid references locais (id) on delete restrict,
   -- Nullable de propósito: quando a conta de quem escreveu a revisão é
   -- apagada, a autoria vira nula em vez de apagar a revisão junto — o
   -- histórico de curadoria não é dado pessoal descartável (decisão 3).
@@ -336,7 +353,11 @@ comment on column preferencias.necessidades_acessibilidade is
 
 create table favoritos (
   usuario_id uuid not null references usuarios (id) on delete cascade,
-  local_id uuid not null references locais (id) on delete cascade,
+  -- `on delete restrict`, não cascade: favorito é histórico de pessoa
+  -- (decisão 4) — apagar o lugar tem que falhar alto, não sumir o
+  -- favorito de alguém em silêncio. Lugar sai de cena arquivando
+  -- (`locais.arquivado_em`), nunca apagando.
+  local_id uuid not null references locais (id) on delete restrict,
   criado_em timestamptz not null default now(),
   primary key (usuario_id, local_id)
 );
@@ -366,7 +387,9 @@ create index idx_visitas_local on visitas (local_id);
 create table avaliacoes (
   id uuid primary key default gen_random_uuid(),
   usuario_id uuid not null references usuarios (id) on delete cascade,
-  local_id uuid not null references locais (id) on delete cascade,
+  -- `on delete restrict`, mesmo motivo de favoritos.local_id: avaliação é
+  -- histórico de pessoa sobre o lugar, não algo do lugar em si (decisão 4).
+  local_id uuid not null references locais (id) on delete restrict,
   nota smallint not null check (nota between 1 and 5),
   comentario text,
   criado_em timestamptz not null default now(),
@@ -446,8 +469,9 @@ alter table sugestoes_local enable row level security;
 -- FORCE além de ENABLE: sem isso, o DONO da tabela (quem rodou este DDL)
 -- passa por cima de toda policy — na prática só importa se alguém rodar
 -- uma query com a role dona da tabela em vez de authenticated/anon, o que
--- o Supabase evita, mas é defesa em profundidade barata nas seis tabelas
+-- o Supabase evita, mas é defesa em profundidade barata nas sete tabelas
 -- que guardam dado de pessoa de verdade (não catálogo público).
+alter table usuarios force row level security;
 alter table preferencias force row level security;
 alter table favoritos force row level security;
 alter table visitas force row level security;
@@ -499,8 +523,10 @@ create policy avaliacoes_remocao_propria on avaliacoes
 -- locais: conteúdo publicado é público para leitura (é o catálogo do
 -- app). Escrita só por curador, e só via fluxo de revisão — não é a tela
 -- do app que escreve aqui direto.
+-- Arquivado (arquivado_em preenchido) some da leitura pública, mas
+-- continua visível pra curador — é o curador que desarquiva.
 create policy locais_leitura_publica on locais
-  for select using (true);
+  for select using (arquivado_em is null or eh_curador());
 create policy locais_escrita_curador on locais
   for insert with check (eh_curador());
 create policy locais_edicao_curador on locais
@@ -566,12 +592,22 @@ create policy roteiros_apagar on roteiros
 -- de outra pessoa" — leitura pública não é permissão de escrita.
 alter table roteiro_paradas enable row level security;
 
+-- Composto com a condição de dono que já existia: mesmo um roteiro
+-- visível (público ou do próprio usuário) não pode vazar o título de um
+-- evento — aqui, o nome do lugar — se esse lugar estiver arquivado. Só a
+-- linha (ids) já não vazava nada sozinha; o vazamento seria via join com
+-- `locais` em outra tela.
 create policy roteiro_paradas_leitura on roteiro_paradas
   for select using (
     exists (
       select 1 from roteiros r
       where r.id = roteiro_paradas.roteiro_id
         and (r.usuario_id is null or r.usuario_id = auth.uid())
+    )
+    and exists (
+      select 1 from locais l
+      where l.id = roteiro_paradas.local_id
+        and (l.arquivado_em is null or eh_curador())
     )
   );
 
@@ -625,5 +661,19 @@ create policy acessibilidade_escrita on acessibilidade for all using (eh_curador
 create policy ambiente_sensorial_leitura on ambiente_sensorial for select using (true);
 create policy ambiente_sensorial_escrita on ambiente_sensorial for all using (eh_curador());
 
-create policy eventos_leitura on eventos for select using (true);
+-- `using (true)` puro vazava: eventos.local_id nulo é evento solto (sem
+-- endereço fixo, continua público), mas quando aponta pra um local
+-- arquivado, título e descrição do evento eram legíveis por qualquer
+-- anônimo — a decisão 5 (arquivar tira lugar de cena, inclusive espaço
+-- religioso ou comunidade tradicional a pedido dela) valia pra `locais` e
+-- não pro que aponta pra `locais` de outra tabela.
+create policy eventos_leitura on eventos
+  for select using (
+    local_id is null
+    or exists (
+      select 1 from locais l
+      where l.id = eventos.local_id
+        and (l.arquivado_em is null or eh_curador())
+    )
+  );
 create policy eventos_escrita on eventos for all using (eh_curador());

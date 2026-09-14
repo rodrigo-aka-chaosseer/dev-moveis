@@ -174,3 +174,100 @@ De quebra, a auditoria também achou seis tabelas com RLS ligado mas sem
 `preferencias`, `avaliacoes`, `roteiros`) — sem `FORCE`, o dono da tabela
 ignora as políticas. No Supabase isso raramente importa na prática, mas é
 defesa em profundidade barata, então entrou junto nesta correção.
+
+---
+
+## 8. Tudo que aponta para `locais` se divide em só dois grupos, e `locais` ganha arquivamento
+
+Data: 14/09/2026
+
+Uma segunda auditoria, já em cima da main mergeada, achou duas coisas que a
+decisão 7 tinha deixado incoerentes entre si.
+
+**A primeira: seis referências a `locais` com quatro políticas de exclusão
+diferentes**, e duas delas nunca executavam. `favoritos.local_id` e
+`avaliacoes.local_id` estavam com `cascade` (a decisão 7 dizia isso —
+estava errada nesse ponto específico), mas como `visitas.local_id` e
+`roteiro_paradas.local_id` já bloqueavam a exclusão com `restrict`, a
+cascata nunca chegava a rodar de verdade. E `eventos.local_id` e
+`revisoes_local.local_id` faziam `set null`, o que deixava evento
+flutuando sem lugar e revisão de curadoria sem dizer mais o que revisou —
+prova em teste real: apagar um local deixava a revisão viva com
+`local_id` nulo.
+
+A correção simplifica pra dois grupos, e só dois:
+
+- **Cascata**, pro que é do próprio lugar e morre com ele:
+  `locais_tags`, `acessibilidade`, `ambiente_sensorial`,
+  `sugestoes_local.local_id` (já estava certo nesse).
+- **Restrict**, pra histórico de pessoa e de curadoria, que não pode
+  sumir em silêncio: `favoritos.local_id`, `avaliacoes.local_id`,
+  `visitas.local_id`, `roteiro_paradas.local_id`, `eventos.local_id`,
+  `revisoes_local.local_id`. `revisoes_local.local_id` continua aceitando
+  nulo — nulo ali significa "proposta de local novo, ainda sem registro em
+  `locais`", que é outra coisa e não mudou.
+
+**A segunda: a decisão 7 dizia "lugar não se apaga, se despublica", mas
+não existia despublicar.** `locais` não tinha nenhuma coluna de
+publicação, arquivamento ou status, e a leitura pública era
+`using (true)` sem filtro nenhum. Um lugar cadastrado errado, uma vez
+favoritado por alguém, ficava preso pra sempre — `restrict` bloqueia o
+DELETE, mas não existia outro caminho de saída.
+
+`locais` ganha `arquivado_em timestamptz` (nulo = publicado). A política
+de leitura pública passa a filtrar por `arquivado_em is null`, exceto pra
+curador, que continua vendo o lugar arquivado — é ele quem desarquiva.
+DELETE em `locais` continua sem política nenhuma, de propósito: apagar
+lugar nunca foi o caminho certo, e agora existe o caminho certo pra valer.
+
+E o `usuarios` ficou de fora da lista de `FORCE ROW LEVEL SECURITY` da
+decisão 7 por engano — guarda dado de pessoa (nome, papel) igual às
+outras seis. Entrou junto nesta correção.
+
+Comportamento verificado com linha real, não só DDL: apagar um lugar
+favoritado falha por `favoritos_local_id_fkey`; arquivar um lugar some da
+leitura pública mas continua visível pro curador; apagar a conta de quem
+curou mantém o lugar e a revisão vivos, só com autoria nula; isolamento de
+RLS entre duas usuárias continua intacto depois da mudança na política de
+`locais`.
+
+---
+
+## 9. Arquivamento tem que esconder o lugar e o que expõe conteúdo dele por tabela vizinha
+
+Data: 14/09/2026
+
+Uma terceira auditoria, ainda em cima do PR do arquivamento (decisão 8),
+testou os três casos onde outra tabela referencia um local arquivado
+separadamente, em vez de tratá-los como um problema só — e achou que são
+duas coisas diferentes.
+
+**Parada de roteiro (`roteiro_paradas`) e favorito (`favoritos`) não
+vazavam nada.** A linha em si só guarda ids (`local_id`, `roteiro_id`,
+`usuario_id`) — nenhum texto do lugar mora ali. Um anônimo consegue ler a
+linha da parada, mas o JOIN com `locais` pra pegar nome, história ou
+qualquer texto volta vazio, porque a política de `locais` já filtra o
+arquivado. O resultado prático é uma tela quebrada (parada ou favorito
+apontando pro nada), não um vazamento — mas `roteiro_paradas_leitura`
+ganhou o mesmo filtro de arquivamento mesmo assim, pra tela não ter que
+adivinhar por que o join veio vazio.
+
+**`eventos` vazava de verdade.** Diferente de parada e favorito, `eventos`
+tem `titulo` e `descricao` PRÓPRIOS — não dependem de nenhum JOIN pra
+aparecer. A política era `using (true)` sem filtro nenhum, então um
+anônimo lia o título e a descrição inteira de um evento num lugar já
+arquivado. Isso anula a decisão 5 pela porta dos fundos: arquivar pode ser
+exatamente o ato de tirar do mapa um terreiro ou uma comunidade tradicional
+a pedido dela, e o evento marcado nesse lugar contando a história pública
+inteira é o mesmo vazamento que a decisão 5 existe pra evitar.
+
+Corrigido: `eventos_leitura` passa a exigir `local_id is null` (evento
+solto, sempre foi público) ou o local referenciado não estar arquivado
+(exceto pra curador). `roteiro_paradas_leitura` ganhou o mesmo filtro,
+composto com a condição de dono que já tinha, não substituindo ela.
+
+**Favorito fantasma (local arquivado continuar aparecendo na lista de
+favoritos de alguém, como item quebrado) fica como está — de propósito.**
+Não é falha de banco: é decisão de produto ainda não tomada, entre esconder
+o favorito quebrado da lista ou mostrar algo como "lugar indisponível". A
+tela de favoritos (ainda não construída) é quem resolve isso quando existir.
