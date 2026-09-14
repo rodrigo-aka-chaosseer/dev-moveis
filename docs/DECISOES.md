@@ -230,3 +230,44 @@ leitura pública mas continua visível pro curador; apagar a conta de quem
 curou mantém o lugar e a revisão vivos, só com autoria nula; isolamento de
 RLS entre duas usuárias continua intacto depois da mudança na política de
 `locais`.
+
+---
+
+## 9. Arquivamento tem que esconder o lugar e o que expõe conteúdo dele por tabela vizinha
+
+Data: 14/09/2026
+
+Uma terceira auditoria, ainda em cima do PR do arquivamento (decisão 8),
+testou os três casos onde outra tabela referencia um local arquivado
+separadamente, em vez de tratá-los como um problema só — e achou que são
+duas coisas diferentes.
+
+**Parada de roteiro (`roteiro_paradas`) e favorito (`favoritos`) não
+vazavam nada.** A linha em si só guarda ids (`local_id`, `roteiro_id`,
+`usuario_id`) — nenhum texto do lugar mora ali. Um anônimo consegue ler a
+linha da parada, mas o JOIN com `locais` pra pegar nome, história ou
+qualquer texto volta vazio, porque a política de `locais` já filtra o
+arquivado. O resultado prático é uma tela quebrada (parada ou favorito
+apontando pro nada), não um vazamento — mas `roteiro_paradas_leitura`
+ganhou o mesmo filtro de arquivamento mesmo assim, pra tela não ter que
+adivinhar por que o join veio vazio.
+
+**`eventos` vazava de verdade.** Diferente de parada e favorito, `eventos`
+tem `titulo` e `descricao` PRÓPRIOS — não dependem de nenhum JOIN pra
+aparecer. A política era `using (true)` sem filtro nenhum, então um
+anônimo lia o título e a descrição inteira de um evento num lugar já
+arquivado. Isso anula a decisão 5 pela porta dos fundos: arquivar pode ser
+exatamente o ato de tirar do mapa um terreiro ou uma comunidade tradicional
+a pedido dela, e o evento marcado nesse lugar contando a história pública
+inteira é o mesmo vazamento que a decisão 5 existe pra evitar.
+
+Corrigido: `eventos_leitura` passa a exigir `local_id is null` (evento
+solto, sempre foi público) ou o local referenciado não estar arquivado
+(exceto pra curador). `roteiro_paradas_leitura` ganhou o mesmo filtro,
+composto com a condição de dono que já tinha, não substituindo ela.
+
+**Favorito fantasma (local arquivado continuar aparecendo na lista de
+favoritos de alguém, como item quebrado) fica como está — de propósito.**
+Não é falha de banco: é decisão de produto ainda não tomada, entre esconder
+o favorito quebrado da lista ou mostrar algo como "lugar indisponível". A
+tela de favoritos (ainda não construída) é quem resolve isso quando existir.

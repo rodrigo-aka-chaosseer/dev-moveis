@@ -592,12 +592,22 @@ create policy roteiros_apagar on roteiros
 -- de outra pessoa" — leitura pública não é permissão de escrita.
 alter table roteiro_paradas enable row level security;
 
+-- Composto com a condição de dono que já existia: mesmo um roteiro
+-- visível (público ou do próprio usuário) não pode vazar o título de um
+-- evento — aqui, o nome do lugar — se esse lugar estiver arquivado. Só a
+-- linha (ids) já não vazava nada sozinha; o vazamento seria via join com
+-- `locais` em outra tela.
 create policy roteiro_paradas_leitura on roteiro_paradas
   for select using (
     exists (
       select 1 from roteiros r
       where r.id = roteiro_paradas.roteiro_id
         and (r.usuario_id is null or r.usuario_id = auth.uid())
+    )
+    and exists (
+      select 1 from locais l
+      where l.id = roteiro_paradas.local_id
+        and (l.arquivado_em is null or eh_curador())
     )
   );
 
@@ -651,5 +661,19 @@ create policy acessibilidade_escrita on acessibilidade for all using (eh_curador
 create policy ambiente_sensorial_leitura on ambiente_sensorial for select using (true);
 create policy ambiente_sensorial_escrita on ambiente_sensorial for all using (eh_curador());
 
-create policy eventos_leitura on eventos for select using (true);
+-- `using (true)` puro vazava: eventos.local_id nulo é evento solto (sem
+-- endereço fixo, continua público), mas quando aponta pra um local
+-- arquivado, título e descrição do evento eram legíveis por qualquer
+-- anônimo — a decisão 5 (arquivar tira lugar de cena, inclusive espaço
+-- religioso ou comunidade tradicional a pedido dela) valia pra `locais` e
+-- não pro que aponta pra `locais` de outra tabela.
+create policy eventos_leitura on eventos
+  for select using (
+    local_id is null
+    or exists (
+      select 1 from locais l
+      where l.id = eventos.local_id
+        and (l.arquivado_em is null or eh_curador())
+    )
+  );
 create policy eventos_escrita on eventos for all using (eh_curador());

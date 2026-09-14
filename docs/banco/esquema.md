@@ -152,17 +152,21 @@ deste desenho, e vale contar o que era o furo, não só o que ficou:
   usuário autenticado podia alterar ou apagar o catálogo inteiro (inclusive
   por cascata, apagando uma tag). Leitura pública, escrita só curador.
 
-Duas auditorias independentes (rodando o DDL de verdade fora do Supabase,
-em dois momentos) acharam coisas que já estão corrigidas: sete tabelas de
+Três auditorias independentes (rodando o DDL de verdade fora do Supabase,
+em três momentos) acharam coisas que já estão corrigidas: sete tabelas de
 dado pessoal (`usuarios`, `visitas`, `favoritos`, `sugestoes_local`,
 `preferencias`, `avaliacoes`, `roteiros`) tinham RLS ligado mas não
 `FORCE ROW LEVEL SECURITY` — sem `FORCE`, o dono da tabela passa por cima
 de toda política. No Supabase isso raramente aparece na prática, mas é
-defesa em profundidade barata. A segunda auditoria também achou que a
-política de exclusão em volta de `locais` tinha quatro regras diferentes
-apontando pro mesmo lugar — duas delas nunca chegavam a executar — e que
-"lugar se despublica, não se apaga" (decisão 7) não tinha, de fato, um
-despublicar. As duas coisas viraram a seção abaixo.
+defesa em profundidade barata. A segunda auditoria achou que a política de
+exclusão em volta de `locais` tinha quatro regras diferentes apontando pro
+mesmo lugar — duas delas nunca chegavam a executar — e que "lugar se
+despublica, não se apaga" (decisão 7) não tinha, de fato, um despublicar.
+A terceira, testando os três casos de local arquivado em separado em vez
+de como um problema só, achou que `eventos` vazava título e descrição de
+um lugar arquivado pra qualquer anônimo, porque tem texto próprio e a
+política de leitura não olhava pro arquivamento do local referenciado.
+As três coisas viraram a seção abaixo.
 
 ## O que acontece ao apagar uma conta, e o que acontece ao tirar um lugar de cena
 
@@ -193,6 +197,20 @@ trabalham juntas:
   próprio lugar e não faz sentido sem ele — as tags de diversidade, a
   acessibilidade, o ambiente sensorial, uma sugestão que virou esse lugar —
   esses sim cascateiam quando o lugar (hipoteticamente) some.
+- **Arquivar esconde o lugar, e também o que outra tabela expõe sobre
+  ele.** Não basta a linha de `locais` sumir da leitura pública — quem lê
+  `eventos` direto, por exemplo, não passa pela política de `locais`
+  nenhuma. `eventos` tem título e descrição próprios, então a política de
+  leitura de `eventos` também checa se o local dele está arquivado (exceto
+  pra curador); um evento sem `local_id` (solto, sem endereço fixo)
+  continua público — arquivamento de lugar não tem o que esconder ali.
+  `roteiro_paradas` ganhou a mesma checagem, embora nesse caso não
+  houvesse vazamento de texto: a linha só tem ids, e o JOIN com `locais`
+  pra pegar nome ou história já vinha vazio por causa do filtro em
+  `locais`. Favorito com local arquivado (`favoritos`) fica como item
+  quebrado na lista de alguém, de propósito — decisão 9 de
+  `docs/DECISOES.md`: é a tela de favoritos, quando existir, que decide se
+  esconde ou mostra "lugar indisponível", não o banco.
 
 ## Observação sobre relacionamento e chave estrangeira
 
