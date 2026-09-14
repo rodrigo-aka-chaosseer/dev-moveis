@@ -14,6 +14,8 @@ precisa de dono."
   que nos diferencia de um Google Maps — por que conhecer, história, fonte
   e aviso de visitação pra espaço religioso em atividade. Esses quatro
   campos são obrigatórios desde o início do projeto.
+- Lugar nunca é apagado — só arquivado. `arquivado_em` some da leitura
+  pública sem apagar nada; o curador continua vendo, pra poder desarquivar.
 - Cadastro não é escrita direta: passa por `revisoes_local`, um fluxo de
   curadoria com status (rascunho → em revisão → publicado).
 - Novidade desta entrega: `sugestoes_local` — qualquer pessoa da comunidade
@@ -43,10 +45,16 @@ Security. Todo dado de pessoa tem essa trava, testada de verdade: rodamos
 o banco inteiro num Postgres real e confirmamos que uma usuária não
 enxerga a preferência de acessibilidade da outra."
 
-## Fechamento — o que apagar uma conta faz
+## Fechamento — apagar conta, e por que lugar nunca se apaga
 
 "O que é puramente pessoal (favorito, preferência, passaporte, roteiro
 gerado) some junto com a conta. Mas o conteúdo que a pessoa curou —
 um lugar, uma revisão — continua existindo; só a autoria vira nula. O
 conteúdo curado é o ativo mais caro do projeto, e apagar uma conta não
-pode apagar ele junto."
+pode apagar ele junto.
+
+E lugar em si nunca se apaga, nem por quem tem o papel de curador: se
+alguém favoritou, avaliou, visitou, ou se o lugar é parada de algum
+roteiro ou tem evento marcado, apagar falha com erro de verdade — sumir
+com isso em silêncio seria pior. O caminho certo pra tirar um lugar
+errado de cena é arquivar, não apagar."
