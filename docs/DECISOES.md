@@ -78,3 +78,35 @@ Keystore), a senha passa a ir na requisição e continua sem ser gravada, e a
 chave sobe para `v2` com leitura da `v1`. Os pontos exatos estão marcados no
 código com o comentário `BACKEND:`. A restrição de abas para visitante fica
 com o dono das abas, usando o `useSessao()` de `src/sessao/`.
+
+---
+
+## 5. Backend é Supabase, com Postgres
+
+Data: 14/09/2026
+
+Fecha a decisão 3 do `docs/ESTADO.md`. O back-end do Raízes é Supabase:
+Postgres gerenciado, autenticação pronta e API que o app fala direto, sem
+servidor próprio no meio.
+
+O esquema em `docs/banco/esquema.sql` parte do que já existia em
+`src/db/schema.ts`, com uma mudança estrutural: dado de pessoa agora tem
+dono. `preferencias`, `favoritos` e `visitas` passam a apontar para
+`usuarios`, e `usuarios` referencia `auth.users` do Supabase em vez de
+guardar senha — que é exatamente o erro de segurança mais comum em projeto
+de faculdade. Visitante continua sem gerar linha em `usuarios`: os dados
+dele ficam só no aparelho até criar conta, mesma lógica da decisão 4.
+
+Entram também tabelas novas que o servidor força a existir: `avaliacoes`
+(nota e comentário público sobre um lugar), `revisoes_local` (fluxo de
+curadoria de quem cadastra ou edita um lugar) e `sugestoes_local` (sugestão
+de lugar pela comunidade, mais simples que uma revisão de curadoria).
+
+Row Level Security fica ligado em toda tabela com dado de pessoa. O caso que
+mais importa: `preferencias.necessidades_acessibilidade` é dado sensível — a
+política de acesso garante que só a própria pessoa lê, nunca outro usuário
+nem listagem pública.
+
+A migração de `src/db/schema.ts` de SQLite para Postgres é uma task própria
+da semana, não desta entrega. Até ela rodar, o app continua sem persistência
+real, exatamente como hoje.

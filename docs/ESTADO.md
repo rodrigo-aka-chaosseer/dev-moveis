@@ -39,9 +39,15 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
    ter conteúdo curado até a apresentação.
 2. **Mapa.** `expo-maps` ou `react-native-maps`? Os dois precisam de chave de
    API e de development build. É o maior risco técnico do projeto.
-3. **Backend.** Supabase ou API própria. Dá pra adiar, mas não muito.
-4. **Onde guardar o token na web.** No aparelho vai para `expo-secure-store`,
+3. **Onde guardar o token na web.** No aparelho vai para `expo-secure-store`,
    mas ele não existe na web. Só importa quando houver back-end.
+
+## Backend (fechado — decisão 5)
+
+Supabase, com Postgres. Esquema completo em `docs/banco/esquema.sql` e
+`docs/banco/esquema.md`. Falta: criar o projeto no Supabase, aplicar o DDL,
+migrar `src/db/schema.ts` de SQLite pra Postgres e ligar a primeira tela a
+dado real — quatro tasks da semana, uma por integrante.
 
 ## Risco principal
 
