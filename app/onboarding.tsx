@@ -11,41 +11,35 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, fonts, radius, spacing } from "../src/theme/tokens";
-
-const INTERESSES = [
-  { id: "gastronomia", nome: "Gastronomia", icone: "🍴" },
-  { id: "historia", nome: "História", icone: "▤" },
-  { id: "cultura", nome: "Cultura", icone: "✦" },
-  { id: "musica", nome: "Música", icone: "♫" },
-  { id: "arte", nome: "Arte", icone: "◉" },
-  { id: "eventos", nome: "Eventos", icone: "□" },
-  { id: "natureza", nome: "Natureza", icone: "♧" },
-] as const;
-
-type InteresseId = (typeof INTERESSES)[number]["id"];
+import { usePreferencias } from "../src/preferencias/PreferenciasProvider";
+import { CIDADES, INTERESSES } from "../src/preferencias/dados";
 
 export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selecionados, setSelecionados] = useState<Set<InteresseId>>(
-    () => new Set(),
-  );
+  const { interesses, cidadeId, pronto, erro, alternarInteresse, escolherCidade, aguardarGravacao } = usePreferencias();
+  const [etapa, setEtapa] = useState<1 | 2>(1);
+  const [continuando, setContinuando] = useState(false);
+  const [erroContinuar, setErroContinuar] = useState<string | null>(null);
 
-  function alternarInteresse(id: InteresseId) {
-    setSelecionados((atuais) => {
-      const proximos = new Set(atuais);
-
-      if (proximos.has(id)) {
-        proximos.delete(id);
-      } else {
-        proximos.add(id);
-      }
-
-      return proximos;
-    });
+  async function continuar() {
+    if (etapa === 1) {
+      setEtapa(2);
+      return;
+    }
+    if (!cidadeId || continuando) return;
+    setContinuando(true);
+    setErroContinuar(null);
+    try {
+      await aguardarGravacao();
+      router.replace("/(tabs)/explorar");
+    } catch {
+      setErroContinuar("Não foi possível salvar a cidade. Tente novamente.");
+      setContinuando(false);
+    }
   }
 
-  const quantidade = selecionados.size;
+  const quantidade = interesses.length;
   const resumo =
     quantidade === 0
       ? "Nenhum interesse selecionado"
@@ -58,9 +52,9 @@ export default function Onboarding() {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Voltar para a tela de abertura"
+          accessibilityLabel={etapa === 2 ? "Voltar aos interesses" : "Voltar"}
           hitSlop={8}
-          onPress={() => router.back()}
+          onPress={() => etapa === 2 ? setEtapa(1) : router.back()}
           style={({ pressed }) => [
             styles.backButton,
             pressed && styles.backButtonPressed,
@@ -71,19 +65,20 @@ export default function Onboarding() {
 
         <View
           accessibilityRole="progressbar"
-          accessibilityValue={{ min: 0, max: 1, now: 1 }}
+          accessibilityValue={{ min: 0, max: 2, now: etapa }}
           style={styles.progressTrack}
         >
-          <View style={styles.progressFill} />
+          <View style={[styles.progressFill, { width: etapa === 1 ? "50%" : "100%" }]} />
         </View>
 
-        <Text style={styles.stepLabel}>1 de 1</Text>
+        <Text style={styles.stepLabel}>{etapa} de 2</Text>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {!pronto ? <Text style={styles.summary}>Carregando preferências…</Text> : etapa === 1 ? <>
         <View style={styles.intro}>
           <Text style={styles.eyebrow}>SUAS PREFERÊNCIAS</Text>
           <Text style={styles.title}>O que você gosta de conhecer?</Text>
@@ -95,7 +90,7 @@ export default function Onboarding() {
 
         <View accessibilityLabel="Interesses culturais" style={styles.grid}>
           {INTERESSES.map((interesse) => {
-            const selecionado = selecionados.has(interesse.id);
+            const selecionado = interesses.includes(interesse.id);
 
             return (
               <Pressable
@@ -155,6 +150,35 @@ export default function Onboarding() {
         <Text accessibilityLiveRegion="polite" style={styles.summary}>
           {resumo}
         </Text>
+        {quantidade > 0 && (
+          <Text style={styles.selectedList}>
+            {INTERESSES.filter((item) => interesses.includes(item.id)).map((item) => item.nome).join(" · ")}
+          </Text>
+        )}
+        </> : <>
+          <View style={styles.intro}>
+            <Text style={styles.eyebrow}>SEU DESTINO</Text>
+            <Text style={styles.title}>Qual cidade você quer conhecer?</Text>
+            <Text style={styles.subtitle}>Escolha uma cidade para ver os lugares dela em Explorar. Você poderá trocar depois.</Text>
+          </View>
+          <View style={styles.cityList}>
+            {CIDADES.map((cidade) => {
+              const selecionada = cidadeId === cidade.id;
+              return <Pressable
+                key={cidade.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${cidade.nome}, ${cidade.uf}`}
+                accessibilityState={{ selected: selecionada }}
+                onPress={() => escolherCidade(cidade.id)}
+                style={({ pressed }) => [styles.city, selecionada && styles.interestSelected, pressed && styles.interestPressed]}
+              >
+                <Text style={[styles.cityName, selecionada && styles.interestLabelSelected]}>{cidade.nome}, {cidade.uf}</Text>
+                <Text style={[styles.cityCheck, selecionada && styles.cityCheckSelected]}>{selecionada ? "✓" : ""}</Text>
+              </Pressable>;
+            })}
+          </View>
+        </>}
+        {(erro || erroContinuar) && <Text accessibilityLiveRegion="polite" style={styles.error}>{erroContinuar || erro}</Text>}
       </ScrollView>
 
       <View
@@ -163,9 +187,15 @@ export default function Onboarding() {
           { paddingBottom: Math.max(insets.bottom, 16) },
         ]}
       >
-        <View style={styles.futureButton} accessibilityElementsHidden>
-          <Text style={styles.futureButtonLabel}>Continuar</Text>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !pronto || (etapa === 2 && !cidadeId) || continuando }}
+          disabled={!pronto || (etapa === 2 && !cidadeId) || continuando}
+          onPress={continuar}
+          style={[styles.futureButton, (!pronto || (etapa === 2 && !cidadeId)) && styles.buttonDisabled]}
+        >
+          <Text style={styles.futureButtonLabel}>{etapa === 1 ? "Continuar" : "Explorar cidade"}</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -339,6 +369,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
   },
+  selectedList: {
+    marginTop: 10,
+    textAlign: "center",
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.text,
+  },
+  cityList: { gap: 12 },
+  city: {
+    minHeight: 64,
+    borderRadius: radius.card,
+    borderWidth: 1.5,
+    borderColor: colors.surface3,
+    backgroundColor: colors.surface2,
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cityName: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
+  cityCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: colors.surface3,
+    textAlign: "center",
+    color: colors.onDark,
+  },
+  cityCheckSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+  error: { marginTop: 16, fontFamily: fonts.semibold, fontSize: 13, color: colors.error },
   footer: {
     paddingHorizontal: spacing.pageX,
     paddingTop: 14,
@@ -352,8 +414,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.accent,
-    opacity: 0.45,
   },
+  buttonDisabled: { opacity: 0.45 },
   futureButtonLabel: {
     fontFamily: fonts.semibold,
     fontSize: 16,

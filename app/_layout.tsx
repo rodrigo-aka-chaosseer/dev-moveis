@@ -15,6 +15,7 @@ import {
   useSessao,
   useSessaoInicial,
 } from "../src/sessao/SessaoProvider";
+import { PreferenciasProvider } from "../src/preferencias/PreferenciasProvider";
 
 // Segura a splash nativa até a fonte carregar. Sem isso dá pra ver o título
 // piscando na fonte do sistema antes da Jakarta entrar. Também espera a
@@ -47,8 +48,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <SessaoProvider sessaoInicial={sessao.sessaoInicial}>
-        <StatusBar style="light" />
-        <Rotas />
+        <PreferenciasProvider>
+          <StatusBar style="light" />
+          <Rotas />
+        </PreferenciasProvider>
       </SessaoProvider>
     </SafeAreaProvider>
   );
