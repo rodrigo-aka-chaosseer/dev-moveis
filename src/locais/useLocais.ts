@@ -1,37 +1,52 @@
 import { useEffect, useState } from "react";
 
 import type { LocalLista } from "../mocks/locais";
+import type { CidadeId } from "../preferencias/dados";
 import { buscarLocalPorId, listarLocais } from "./listarLocais";
 
 const ERRO_LISTA = "Não foi possível carregar os lugares.";
 const ERRO_UM = "Não foi possível carregar este lugar.";
 
-export function useLocais() {
-  const [locais, setLocais] = useState<LocalLista[] | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+export function useLocais(cidadeId: CidadeId | null) {
+  const [pedido, setPedido] = useState<{
+    cidadeId: CidadeId;
+    locais: LocalLista[];
+    erro: string | null;
+  } | null>(null);
 
   useEffect(() => {
+    if (!cidadeId) {
+      return;
+    }
+
     let ativo = true;
 
-    listarLocais()
+    listarLocais(cidadeId)
       .then((dados) => {
         if (!ativo) return;
-        setLocais(dados);
+        setPedido({ cidadeId, locais: dados, erro: null });
       })
       .catch(() => {
         if (!ativo) return;
-        setErro(ERRO_LISTA);
+        setPedido({ cidadeId, locais: [], erro: ERRO_LISTA });
       });
 
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [cidadeId]);
+
+  if (!cidadeId) {
+    return { locais: [], carregando: false, erro: null };
+  }
+
+  // Trocar de cidade não pode mostrar por um instante a lista da anterior.
+  const destaCidade = pedido?.cidadeId === cidadeId;
 
   return {
-    locais: locais ?? [],
-    carregando: locais === null && erro === null,
-    erro,
+    locais: destaCidade ? pedido.locais : [],
+    carregando: !destaCidade,
+    erro: destaCidade ? pedido.erro : null,
   };
 }
 

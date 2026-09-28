@@ -1,7 +1,9 @@
 import type { Local } from "../db/schema";
+import type { CidadeId } from "../preferencias/dados";
 
 
 export type LocalLista = Local & {
+  cidadeId: CidadeId;
   tags: string[];
   distancia: string;
 };
@@ -9,6 +11,7 @@ export type LocalLista = Local & {
 export const locais: LocalLista[] = [
   {
     id: "terreiro-ile-axe-opo-afonja",
+    cidadeId: "salvador",
     nome: "Terreiro Ilê Axé Opô Afonjá",
     categoria: "religiao",
     latitude: -12.9312,
@@ -36,6 +39,7 @@ export const locais: LocalLista[] = [
   },
   {
     id: "restaurante-sabor-da-bahia",
+    cidadeId: "salvador",
     nome: "Restaurante do Sabor da Bahia",
     categoria: "gastronomia",
     latitude: -12.9714,
@@ -67,6 +71,7 @@ export const locais: LocalLista[] = [
   },
   {
     id: "galeria-arte-negra",
+    cidadeId: "salvador",
     nome: "Galeria Arte Negra",
     categoria: "arte",
     latitude: -12.9811,

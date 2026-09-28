@@ -23,6 +23,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { usePreferencias } from "../src/preferencias/PreferenciasProvider";
 import { useSessao } from "../src/sessao/SessaoProvider";
 import {
   credenciaisSaoValidas,
@@ -43,9 +44,11 @@ import {
 const FUNDO = require("../assets/images/splash-bg.jpg");
 
 // Caminhos explícitos: `app/index.tsx` e `app/(tabs)/index.tsx` disputam "/".
-// A conta identificada abre o perfil; quem entra como visitante continua na
-// exploração, pois esse fluxo não passou pela validação de credenciais.
+// A conta identificada abre o perfil se já respondeu o onboarding, e o
+// onboarding se ainda não; quem entra como visitante continua na exploração,
+// pois esse fluxo não passou pela validação de credenciais.
 const DESTINO_APOS_LOGIN = "/(tabs)/perfil";
+const DESTINO_SEM_ONBOARDING = "/onboarding";
 const DESTINO_VISITANTE = "/(tabs)/explorar";
 
 // Em repouso o bloco terracota ocupa quase metade da tela e a marca é grande.
@@ -110,6 +113,7 @@ export default function Login() {
   const insets = useSafeAreaInsets();
   const { height: alturaTela } = useWindowDimensions();
   const { entrar, entrarComoVisitante } = useSessao();
+  const { onboardingConcluido } = usePreferencias();
   const reduzirMovimento = useReduzirMovimento();
 
   const [email, setEmail] = useState("");
@@ -272,7 +276,7 @@ export default function Login() {
       }
       // `enviando` fica ligado de propósito: a tela some com o replace e um
       // segundo toque no botão durante a transição não pode entrar de novo.
-      router.replace(DESTINO_APOS_LOGIN);
+      router.replace(onboardingConcluido ? DESTINO_APOS_LOGIN : DESTINO_SEM_ONBOARDING);
     } catch {
       const mensagem = "Não deu para guardar sua entrada. Tenta de novo.";
       setErroGeral(mensagem);

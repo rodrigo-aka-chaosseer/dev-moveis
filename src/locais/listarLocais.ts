@@ -1,4 +1,5 @@
 import { locais, type LocalLista } from "../mocks/locais";
+import type { CidadeId } from "../preferencias/dados";
 
 const ATRASO_MS = 250;
 
@@ -21,10 +22,10 @@ function esperar(ms: number) {
   });
 }
 
-/** BACKEND: trocar o mock por uma leitura no Supabase. */
-export async function listarLocais(): Promise<LocalLista[]> {
+/** BACKEND: trocar o mock por uma leitura no Supabase filtrada pela cidade. */
+export async function listarLocais(cidadeId: CidadeId): Promise<LocalLista[]> {
   await esperar(ATRASO_MS);
-  return locais;
+  return locais.filter((local) => local.cidadeId === cidadeId);
 }
 
 /** BACKEND: trocar o mock por `select` no id. */
