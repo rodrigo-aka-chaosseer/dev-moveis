@@ -23,7 +23,7 @@ export default function Explorar() {
   const insets = useSafeAreaInsets();
   const { cidadeId, interesses, pronto, erro: erroPreferencias, escolherCidade } =
     usePreferencias();
-  const { locais, carregando, erro } = useLocais();
+  const { locais, carregando, erro } = useLocais(cidadeId);
   const nomesInteresses = INTERESSES.filter((item) => interesses.includes(item.id)).map(
     (item) => item.nome,
   );
@@ -35,13 +35,9 @@ export default function Explorar() {
         <Text style={styles.titulo}>Explorar</Text>
       </View>
 
-      {!pronto || carregando ? (
+      {!pronto ? (
         <View style={styles.estado}>
           <ActivityIndicator color={colors.accent} />
-        </View>
-      ) : erro ? (
-        <View style={styles.estado}>
-          <Text style={styles.erro}>{erro}</Text>
         </View>
       ) : (
         <ScrollView
@@ -93,8 +89,14 @@ export default function Explorar() {
 
           {!cidadeId ? (
             <Text style={styles.vazio}>Escolha uma cidade para começar.</Text>
+          ) : carregando ? (
+            <ActivityIndicator color={colors.accent} />
+          ) : erro ? (
+            <Text style={styles.erro}>{erro}</Text>
           ) : locais.length === 0 ? (
-            <Text style={styles.vazio}>Nenhum lugar para mostrar.</Text>
+            <Text style={styles.vazio}>
+              Ainda não temos lugares em {nomeCidade(cidadeId)}.
+            </Text>
           ) : (
             locais.map((local) => <CartaoLocal key={local.id} local={local} />)
           )}
