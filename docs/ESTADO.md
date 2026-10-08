@@ -12,10 +12,34 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [x] Protótipo navegável de 10 telas
 - [x] Repositório e base do projeto
 - [x] RAÍZES-01 — tela de abertura
-- [ ] RAÍZES-02 — seleção de interesses (Maria Clara)
-- [ ] RAÍZES-03 — navegação por abas (Levi)
-- [ ] RAÍZES-04 — tela de perfil
+- [x] RAÍZES-02 — seleção de interesses (Maria Clara, PR #6)
+- [x] RAÍZES-03 — navegação por abas (Levi)
+- [ ] RAÍZES-04 — tela de perfil (branch `raizes-tela-perfil`, sem PR; virou a #30)
 - [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
+- [x] RAÍZES-08 — validação do login (Maria Clara, PR #14)
+- [x] RAÍZES-09 — abertura redireciona por onboarding concluído (Josias)
+- [x] RAÍZES-10 e 13 — interesses persistidos e cidade no onboarding (Maria Clara, PR #26)
+- [x] RAÍZES-11 e 12 — detalhe do local (`app/roteiro/[id].tsx`) e Explorar com dados (Levi, PR #27)
+- [x] RAÍZES-15 — login real com Supabase Auth (Josias)
+
+## Semana da Aula 10 (01 a 08/out) — Fundação Supabase
+
+Projeto `raizes` criado no Supabase (região São Paulo), `docs/banco/esquema.sql`
+aplicado: 15 tabelas, 36 políticas, RLS em todas, FORCE nas 7 de dado pessoal,
+trigger `ao_criar_usuario` confirmado criando a linha em `usuarios`.
+
+Como rodar com o banco real: copiar `.env.example` para `.env` e preencher com
+Settings → API Keys do projeto (só a chave pública). Sem `.env` o app roda com
+o mock, de propósito, para ninguém ficar travado.
+
+- [x] #22 RAÍZES-15 — login real (Josias): `src/lib/supabase.ts`,
+  `src/sessao/autenticar.ts`; `sair()` encerra a sessão no servidor.
+- [ ] #29 RAÍZES-17 — Explorar e detalhe lendo do Supabase (Levi)
+- [ ] #30 RAÍZES-18 — perfil com sessão real, sair, preferências sincronizadas (Maria Clara)
+- [ ] #21 RAÍZES-14 — primeiro lote de lugares curados (Rodrigo)
+
+Usuário de teste em Authentication: `usuario@raizes.com` (a mesma credencial
+do mock, para a demo não mudar).
 
 ## Pendências que nasceram do login (decisão 4)
 
@@ -39,8 +63,9 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
    ter conteúdo curado até a apresentação.
 2. **Mapa.** `expo-maps` ou `react-native-maps`? Os dois precisam de chave de
    API e de development build. É o maior risco técnico do projeto.
-3. **Onde guardar o token na web.** No aparelho vai para `expo-secure-store`,
-   mas ele não existe na web. Só importa quando houver back-end.
+3. **Onde guardar o token no aparelho.** Hoje o supabase-js usa AsyncStorage
+   (ver `src/lib/supabase.ts`); no build nativo deve ir para
+   `expo-secure-store`. Na web fica no localStorage, como o supabase-js faz.
 4. **Fluxo de curadoria não é imposto pelo banco.** `revisoes_local` existe,
    mas um curador ainda pode escrever direto em `locais` sem passar por lá —
    o banco não tem gatilho que force "toda mudança nasce revisão". Fechar
@@ -49,9 +74,9 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 ## Backend (fechado — decisão 5)
 
 Supabase, com Postgres. Esquema completo em `docs/banco/esquema.sql` e
-`docs/banco/esquema.md`. Falta: criar o projeto no Supabase, aplicar o DDL,
-migrar `src/db/schema.ts` de SQLite pra Postgres e ligar a primeira tela a
-dado real — quatro tasks da semana, uma por integrante.
+`docs/banco/esquema.md`, já aplicado no projeto `raizes`. Falta ligar
+Explorar/detalhe (#29) e perfil/preferências (#30) ao banco e migrar
+`src/db/schema.ts` de SQLite para Postgres.
 
 ## Risco principal
 

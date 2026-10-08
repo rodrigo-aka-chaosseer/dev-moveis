@@ -24,13 +24,9 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { usePreferencias } from "../src/preferencias/PreferenciasProvider";
+import { autenticar } from "../src/sessao/autenticar";
 import { useSessao } from "../src/sessao/SessaoProvider";
-import {
-  credenciaisSaoValidas,
-  normalizarEmail,
-  validarLogin,
-  type ErrosLogin,
-} from "../src/sessao/validarLogin";
+import { validarLogin, type ErrosLogin } from "../src/sessao/validarLogin";
 import {
   colors,
   fonts,
@@ -238,25 +234,25 @@ export default function Login() {
       return;
     }
 
-    if (!credenciaisSaoValidas({ email, senha })) {
-      const mensagem = "E-mail ou senha incorretos.";
-      setErroGeral(mensagem);
+    setEnviando(true);
+
+    // A senha vai na requisição e morre aqui: nada dela é gravado no aparelho.
+    const resultado = await autenticar({ email, senha });
+    if (!resultado.ok) {
+      setEnviando(false);
+      setErroGeral(resultado.mensagem);
       tremer(tremorEmail);
       tremer(tremorSenha);
       vibrar(() =>
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
       );
-      AccessibilityInfo.announceForAccessibility(mensagem);
+      AccessibilityInfo.announceForAccessibility(resultado.mensagem);
       emailRef.current?.focus();
       return;
     }
 
-    setEnviando(true);
     try {
-      // BACKEND: aqui entra a autenticação (email, senha) → usuário e token.
-      // A senha vai na requisição e continua sem ser gravada no aparelho.
-      // Hoje `entrar` só guarda o e-mail; a senha morre com este componente.
-      await entrar(normalizarEmail(email));
+      await entrar(resultado.email, resultado.usuarioId);
 
       // Sucesso visível antes de navegar: o check cresce, o aparelho confirma.
       setSucesso(true);

@@ -6,8 +6,9 @@
  * Para o dono das abas: `estado === "visitante"` é quem entrou sem conta e
  * deve ver só a aba Explorar. Para a tela de perfil: `sair()`.
  *
- * BACKEND: `entrar` passa a receber o resultado da autenticação (usuário e
- * token) em vez de só o e-mail, e `sair` também revoga o token no servidor.
+ * Com Supabase configurado, o token fica com o supabase-js (ver
+ * `src/lib/supabase.ts`); aqui só o metadado de quem entrou. `sair` também
+ * encerra a sessão no servidor.
  */
 import {
   createContext,
@@ -25,6 +26,7 @@ import {
   lerSessao,
   type Sessao,
 } from "./armazenamento";
+import { encerrarAutenticacao } from "./autenticar";
 
 export type EstadoSessao = "nenhuma" | "visitante" | "identificado";
 
@@ -32,10 +34,12 @@ export type ContextoSessao = {
   estado: EstadoSessao;
   /** Só existe quando `estado` é "identificado". */
   email?: string;
+  /** Id do usuário no Supabase; só existe com backend configurado. */
+  usuarioId?: string;
   /** Verdadeiro para visitante e identificado. */
   temSessao: boolean;
   /** Grava antes de mudar o estado. Lança se a gravação falhar. */
-  entrar(email: string): Promise<void>;
+  entrar(email: string, usuarioId?: string): Promise<void>;
   /** Muda o estado primeiro; se a gravação falhar, segue sem lançar. */
   entrarComoVisitante(): Promise<void>;
   /** Apaga do disco antes de limpar o estado. Lança se não conseguir apagar. */
@@ -77,10 +81,11 @@ type Props = {
 export function SessaoProvider({ sessaoInicial, children }: Props) {
   const [sessao, setSessao] = useState<Sessao | null>(sessaoInicial);
 
-  const entrar = useCallback(async (email: string) => {
+  const entrar = useCallback(async (email: string, usuarioId?: string) => {
     const nova: Sessao = {
       modo: "identificado",
       email,
+      usuarioId,
       entradoEm: new Date().toISOString(),
     };
     await gravarSessao(nova);
@@ -108,12 +113,16 @@ export function SessaoProvider({ sessaoInicial, children }: Props) {
   const sair = useCallback(async () => {
     await apagarSessao();
     setSessao(null);
+    // Depois de limpar o aparelho: o servidor cair não pode prender a pessoa
+    // dentro da conta.
+    await encerrarAutenticacao();
   }, []);
 
   const valor = useMemo<ContextoSessao>(
     () => ({
       estado: sessao?.modo ?? "nenhuma",
       email: sessao?.modo === "identificado" ? sessao.email : undefined,
+      usuarioId: sessao?.modo === "identificado" ? sessao.usuarioId : undefined,
       temSessao: sessao !== null,
       entrar,
       entrarComoVisitante,

@@ -17,6 +17,8 @@ export type Sessao = {
   modo: ModoSessao;
   /** Só existe quando `modo` é "identificado". */
   email?: string;
+  /** Id em `auth.users`/`usuarios`; só com Supabase configurado. */
+  usuarioId?: string;
   /** ISO 8601. */
   entradoEm: string;
 };

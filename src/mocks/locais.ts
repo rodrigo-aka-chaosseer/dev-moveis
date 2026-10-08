@@ -32,7 +32,7 @@ export const locais: LocalLista[] = [
     fonte: "IPHAN · Secretaria de Cultura da Bahia",
     atualizadoEm: new Date("2026-03-01T12:00:00"),
     imagemUrl:
-      "https://images.unsplash.com/photo-1533174072545-7a4b6ad508fa?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1622522993974-ac1bbbc06cfe?auto=format&fit=crop&w=800&q=80",
     audioUrl: null,
     tags: ["Afro-brasileira", "Religiosa"],
     distancia: "3,4 km",
@@ -95,7 +95,7 @@ export const locais: LocalLista[] = [
     fonte: "Secretaria de Cultura da Bahia",
     atualizadoEm: new Date("2026-03-01T12:00:00"),
     imagemUrl:
-      "https://images.unsplash.com/photo-1531243268764-789783257831?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=800&q=80",
     audioUrl: null,
     tags: ["LGBTQIA+", "Arte"],
     distancia: "1,5 km",
