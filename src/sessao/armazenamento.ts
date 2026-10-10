@@ -1,7 +1,7 @@
 /**
- * Guarda no aparelho quem entrou. Só metadado que não é segredo: e-mail,
- * modo (visitante ou identificado) e quando entrou. A senha nunca passa por
- * aqui.
+ * Guarda no aparelho quem entrou. Só metadado que não é segredo: nome,
+ * e-mail, modo (visitante ou identificado) e quando entrou. A senha nunca
+ * passa por aqui.
  *
  * BACKEND: quando existir servidor, o token de acesso NÃO entra neste
  * arquivo. Ele vai para `expo-secure-store` (Keychain no iOS, Keystore no
@@ -17,6 +17,8 @@ export type Sessao = {
   modo: ModoSessao;
   /** Só existe quando `modo` é "identificado". */
   email?: string;
+  /** Nome retornado pela autenticação; opcional para sessões v1 antigas. */
+  nome?: string;
   /** ISO 8601. */
   entradoEm: string;
 };
@@ -57,8 +59,11 @@ function ehSessaoValida(valor: unknown): valor is Sessao {
   const emailOk =
     registro.modo !== "identificado" ||
     (typeof registro.email === "string" && registro.email.length > 0);
+  const nomeOk =
+    registro.nome === undefined ||
+    (typeof registro.nome === "string" && registro.nome.trim().length > 0);
 
-  return modoOk && dataOk && emailOk;
+  return modoOk && dataOk && emailOk && nomeOk;
 }
 
 /**
@@ -89,7 +94,12 @@ export async function lerSessao(): Promise<Sessao | null> {
     // Reconstrói o objeto para não carregar chave extra que alguém tenha
     // gravado no disco.
     return registro.modo === "identificado"
-      ? { modo: "identificado", email: registro.email, entradoEm: registro.entradoEm }
+      ? {
+          modo: "identificado",
+          email: registro.email,
+          nome: registro.nome,
+          entradoEm: registro.entradoEm,
+        }
       : { modo: "visitante", entradoEm: registro.entradoEm };
   } catch (erro) {
     console.warn("Não foi possível ler a sessão gravada.", erro);
