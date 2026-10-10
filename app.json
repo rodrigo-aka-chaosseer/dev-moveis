@@ -29,7 +29,13 @@
       "expo-router",
       "expo-font",
       "expo-sqlite",
-      ["expo-splash-screen", { "backgroundColor": "#12100e", "resizeMode": "contain" }]
+      ["expo-splash-screen", { "backgroundColor": "#12100e", "resizeMode": "contain" }],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Raízes usa sua localização para mostrar lugares culturais próximos."
+        }
+      ]
     ],
     "experiments": { "typedRoutes": true }
   }

@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, fonts, radius, spacing } from "../src/theme/tokens";
@@ -17,7 +17,16 @@ import { CIDADES, INTERESSES } from "../src/preferencias/dados";
 export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { interesses, cidadeId, pronto, erro, alternarInteresse, escolherCidade, concluirOnboarding } = usePreferencias();
+  const {
+    interesses,
+    cidadeId,
+    onboardingConcluido,
+    pronto,
+    erro,
+    alternarInteresse,
+    escolherCidade,
+    concluirOnboarding,
+  } = usePreferencias();
   const [etapa, setEtapa] = useState<1 | 2>(1);
   const [continuando, setContinuando] = useState(false);
   const [erroContinuar, setErroContinuar] = useState<string | null>(null);
@@ -32,7 +41,10 @@ export default function Onboarding() {
     setErroContinuar(null);
     try {
       await concluirOnboarding();
-      router.replace("/(tabs)/explorar");
+      const destino: Href = onboardingConcluido
+        ? "/(tabs)/explorar"
+        : ("/localizacao" as Href);
+      router.replace(destino);
     } catch {
       setErroContinuar("Não foi possível salvar a cidade. Tente novamente.");
       setContinuando(false);
