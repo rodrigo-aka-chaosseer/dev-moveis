@@ -23,6 +23,14 @@ export const colors = {
   tabInactive: "#a8a29e",
   tabBorder: "#eee9e5",
 
+  /* Superfície clara do passaporte cultural. Mantida separada da paleta
+     geral para a metáfora de documento poder evoluir sem alterar o app. */
+  paper: "#f4ede3",
+  documentPaper: "#fbf7f1",
+  documentInk: "#5c3d2e",
+  inkMuted: "rgba(92, 61, 46, 0.66)",
+  stampEmpty: "rgba(92, 61, 46, 0.34)",
+
   /** Campos de formulário. A borda de foco repete o accent de propósito:
    *  se um dia o foco mudar de cor, muda aqui e não em cada tela. */
   inputBorder: "#e7e1dc",
@@ -34,6 +42,7 @@ export const colors = {
 } as const;
 
 export const radius = {
+  document: 3,
   button: 10,
   input: 12,
   card: 14,

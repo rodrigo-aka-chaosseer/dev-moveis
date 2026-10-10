@@ -255,8 +255,10 @@ export default function Login() {
     try {
       // BACKEND: aqui entra a autenticação (email, senha) → usuário e token.
       // A senha vai na requisição e continua sem ser gravada no aparelho.
-      // Hoje `entrar` só guarda o e-mail; a senha morre com este componente.
-      await entrar(normalizarEmail(email));
+      // Hoje `entrar` só guarda metadados do perfil; a senha morre com este componente.
+      // A autenticação real entregará o nome do perfil. Enquanto a conta de
+      // demonstração existir, ela usa uma identidade explícita e previsível.
+      await entrar(normalizarEmail(email), "Ana Silva");
 
       // Sucesso visível antes de navegar: o check cresce, o aparelho confirma.
       setSucesso(true);
