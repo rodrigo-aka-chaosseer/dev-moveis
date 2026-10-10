@@ -17,7 +17,7 @@ import { CIDADES, INTERESSES } from "../src/preferencias/dados";
 export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { interesses, cidadeId, pronto, erro, alternarInteresse, escolherCidade, aguardarGravacao } = usePreferencias();
+  const { interesses, cidadeId, pronto, erro, alternarInteresse, escolherCidade, concluirOnboarding } = usePreferencias();
   const [etapa, setEtapa] = useState<1 | 2>(1);
   const [continuando, setContinuando] = useState(false);
   const [erroContinuar, setErroContinuar] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export default function Onboarding() {
     setContinuando(true);
     setErroContinuar(null);
     try {
-      await aguardarGravacao();
+      await concluirOnboarding();
       router.replace("/(tabs)/explorar");
     } catch {
       setErroContinuar("Não foi possível salvar a cidade. Tente novamente.");
@@ -54,7 +54,11 @@ export default function Onboarding() {
           accessibilityRole="button"
           accessibilityLabel={etapa === 2 ? "Voltar aos interesses" : "Voltar"}
           hitSlop={8}
-          onPress={() => etapa === 2 ? setEtapa(1) : router.back()}
+          onPress={() => {
+            if (etapa === 2) setEtapa(1);
+            else if (router.canGoBack()) router.back();
+            else router.replace("/(tabs)/explorar");
+          }}
           style={({ pressed }) => [
             styles.backButton,
             pressed && styles.backButtonPressed,

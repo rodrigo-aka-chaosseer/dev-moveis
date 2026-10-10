@@ -1,4 +1,11 @@
-import type { CidadeId } from "@/preferencias/dados";
+import type { Local } from "../db/schema";
+import type { CidadeId } from "../preferencias/dados";
+
+export type LocalLista = Local & {
+  cidadeId: CidadeId;
+  tags: string[];
+  distancia: string;
+};
 
 export type CategoriaLocal =
   | "gastronomia"
@@ -37,7 +44,7 @@ export type LocalCurado = {
  * oficiais de turismo e cultura; `fonte` mantém o caminho de auditoria.
  * Horários e preços são voláteis e devem ser reconferidos antes da publicação.
  */
-export const LOCAIS_CURADOS = [
+const LOCAIS_CURADOS: LocalCurado[] = [
   {
     id: "casa-carnaval-bahia",
     cidadeId: "salvador",
@@ -262,4 +269,23 @@ export const LOCAIS_CURADOS = [
     fonte: "https://visit.recife.pe.gov.br/lugar/casa-da-cultura-de-pernambuco/",
     atualizadoEm: "2026-10-10",
   },
-] as const satisfies readonly LocalCurado[];
+];
+const APRESENTACAO: Record<string, { tags: string[]; distancia: string }> = {
+  "casa-carnaval-bahia": { tags: ["Cultura", "Música"], distancia: "Centro Histórico" },
+  "casa-rio-vermelho": { tags: ["Literatura", "Memória"], distancia: "Rio Vermelho" },
+  "casa-benin": { tags: ["Afro-brasileira", "Arte"], distancia: "Centro Histórico" },
+  "mafro-ufba": { tags: ["Afro-brasileira", "História"], distancia: "Centro Histórico" },
+  "igreja-rosario-pretos": { tags: ["Religiosa", "Afro-brasileira"], distancia: "Pelourinho" },
+  "paco-frevo": { tags: ["Música", "Dança"], distancia: "Recife Antigo" },
+  "cais-sertao": { tags: ["Cultura", "Música"], distancia: "Recife Antigo" },
+  "casa-cultura-pernambuco": { tags: ["Patrimônio", "Artesanato"], distancia: "São José" },
+};
+
+export const locais: LocalLista[] = LOCAIS_CURADOS.map((local) => ({
+  ...local,
+  atualizadoEm: new Date(`${local.atualizadoEm}T12:00:00`),
+  imagemUrl: null,
+  audioUrl: null,
+  tags: APRESENTACAO[local.id].tags,
+  distancia: APRESENTACAO[local.id].distancia,
+}));
