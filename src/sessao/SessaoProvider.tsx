@@ -25,6 +25,7 @@ import {
   lerSessao,
   type Sessao,
 } from "./armazenamento";
+import { encerrarAutenticacao } from "./autenticar";
 
 export type EstadoSessao = "nenhuma" | "visitante" | "identificado";
 
@@ -111,6 +112,7 @@ export function SessaoProvider({ sessaoInicial, children }: Props) {
   const sair = useCallback(async () => {
     await apagarSessao();
     setSessao(null);
+    await encerrarAutenticacao();
   }, []);
 
   const valor = useMemo<ContextoSessao>(
