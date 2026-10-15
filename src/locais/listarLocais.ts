@@ -1,7 +1,14 @@
 import { locais, type LocalLista } from "../mocks/locais";
-import type { CidadeId } from "../preferencias/dados";
+import { CIDADES, type CidadeId } from "../preferencias/dados";
+import {
+  chaveSupabase,
+  criarClienteSupabase,
+  supabaseUrlDefinida,
+} from "../supabase/cliente";
 
 const ATRASO_MS = 250;
+const RAIO_CIDADE_KM = 30;
+const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome))";
 
 const ROTULOS_CATEGORIA: Record<LocalLista["categoria"], string> = {
   gastronomia: "Gastronomia",
@@ -22,16 +29,178 @@ function esperar(ms: number) {
   });
 }
 
-/** BACKEND: trocar o mock por uma leitura no Supabase filtrada pela cidade. */
 export async function listarLocais(cidadeId: CidadeId): Promise<LocalLista[]> {
-  await esperar(ATRASO_MS);
+  if (!supabaseUrlDefinida()) {
+    return listarDoMock(cidadeId);
+  }
+
+  const { data, error } = await consultaPublica();
+  if (error) throw error;
+
+  return (Array.isArray(data) ? data : [])
+    .filter((linha): linha is LinhaLocal => naCidade(linha, cidadeId))
+    .map((linha) => mapearLocal(linha, cidadeId));
+}
+
+export async function buscarLocalPorId(id: string): Promise<LocalLista | null> {
+  if (!supabaseUrlDefinida()) {
+    return buscarDoMock(id);
+  }
+
+  const { data, error } = await consultaPublica().eq("id", id).maybeSingle();
+  if (error) throw error;
+  if (!data || !ehLinhaLocal(data)) return null;
+  return mapearLocal(data, cidadeDoLocal(data));
+}
+
+async function listarDoMock(cidadeId: CidadeId): Promise<LocalLista[]> {
+  if (!process.env.VITEST) await esperar(ATRASO_MS);
   return locais.filter((local) => local.cidadeId === cidadeId);
 }
 
-/** BACKEND: trocar o mock por `select` no id. */
-export async function buscarLocalPorId(id: string): Promise<LocalLista | null> {
-  await esperar(ATRASO_MS);
+async function buscarDoMock(id: string): Promise<LocalLista | null> {
+  if (!process.env.VITEST) await esperar(ATRASO_MS);
   return locais.find((local) => local.id === id) ?? null;
+}
+
+function consultaPublica() {
+  if (!chaveSupabase()) {
+    throw new Error("Supabase não configurado.");
+  }
+  return criarClienteSupabase()
+    .from("locais")
+    .select(SELECT_LOCAL)
+    .is("arquivado_em", null);
+}
+
+type LinhaLocal = {
+  id: string;
+  nome: string;
+  categoria: LocalLista["categoria"];
+  latitude: number;
+  longitude: number;
+  endereco: string;
+  horarios?: LocalLista["horarios"] | null;
+  gratuito: boolean;
+  preco_centavos?: number | null;
+  tempo_medio_min: number;
+  por_que_conhecer: string;
+  historia: string;
+  aviso_visitacao?: string | null;
+  fonte: string;
+  atualizado_em: string | Date;
+  imagem_url?: string | null;
+  audio_url?: string | null;
+  cidade_id?: string | null;
+  locais_tags?: unknown;
+};
+
+function ehLinhaLocal(valor: unknown): valor is LinhaLocal {
+  if (!valor || typeof valor !== "object") return false;
+  const linha = valor as Partial<LinhaLocal>;
+  return typeof linha.id === "string" && typeof linha.nome === "string";
+}
+
+function naCidade(linha: unknown, cidadeId: CidadeId): boolean {
+  if (!ehLinhaLocal(linha)) return false;
+  if (typeof linha.cidade_id === "string" && linha.cidade_id.length > 0) {
+    return linha.cidade_id === cidadeId;
+  }
+  const cidade = CIDADES.find((item) => item.id === cidadeId);
+  if (!cidade) return false;
+  return (
+    distanciaKm(cidade.latitude, cidade.longitude, linha.latitude, linha.longitude) <=
+    RAIO_CIDADE_KM
+  );
+}
+
+function cidadeDoLocal(linha: LinhaLocal): CidadeId {
+  if (ehCidadeId(linha.cidade_id)) return linha.cidade_id;
+  return cidadeMaisProxima(linha.latitude, linha.longitude)?.id ?? CIDADES[0].id;
+}
+
+function ehCidadeId(valor: string | null | undefined): valor is CidadeId {
+  return CIDADES.some((cidade) => cidade.id === valor);
+}
+
+function mapearLocal(linha: LinhaLocal, cidadeId: CidadeId): LocalLista {
+  const cidade = CIDADES.find((item) => item.id === cidadeId) ?? CIDADES[0];
+  const km = distanciaKm(
+    cidade.latitude,
+    cidade.longitude,
+    linha.latitude,
+    linha.longitude,
+  );
+  return {
+    id: linha.id,
+    cidadeId,
+    nome: linha.nome,
+    categoria: linha.categoria,
+    latitude: linha.latitude,
+    longitude: linha.longitude,
+    endereco: linha.endereco,
+    horarios: linha.horarios ?? null,
+    gratuito: Boolean(linha.gratuito),
+    precoCentavos: linha.preco_centavos ?? null,
+    tempoMedioMin: linha.tempo_medio_min,
+    porQueConhecer: linha.por_que_conhecer,
+    historia: linha.historia,
+    avisoVisitacao: linha.aviso_visitacao ?? null,
+    fonte: linha.fonte,
+    atualizadoEm: new Date(linha.atualizado_em),
+    imagemUrl: linha.imagem_url ?? null,
+    audioUrl: linha.audio_url ?? null,
+    tags: nomesDasTags(linha.locais_tags),
+    distancia: formatarDistancia(km),
+  };
+}
+
+function nomesDasTags(locaisTags: unknown): string[] {
+  if (!Array.isArray(locaisTags)) return [];
+  return locaisTags.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const rel = (item as { tags_diversidade?: unknown }).tags_diversidade;
+    if (Array.isArray(rel)) {
+      return rel.flatMap((tag) => nomeTag(tag));
+    }
+    return nomeTag(rel);
+  });
+}
+
+function nomeTag(valor: unknown): string[] {
+  if (valor && typeof valor === "object" && "nome" in valor) {
+    const nome = (valor as { nome: unknown }).nome;
+    return typeof nome === "string" && nome.length > 0 ? [nome] : [];
+  }
+  return [];
+}
+
+function cidadeMaisProxima(latitude: number, longitude: number) {
+  let melhor: { id: CidadeId; km: number } | null = null;
+  for (const cidade of CIDADES) {
+    const km = distanciaKm(cidade.latitude, cidade.longitude, latitude, longitude);
+    if (!melhor || km < melhor.km) {
+      melhor = { id: cidade.id, km };
+    }
+  }
+  return melhor;
+}
+
+function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const radianos = Math.PI / 180;
+  const dLat = (lat2 - lat1) * radianos;
+  const dLon = (lon2 - lon1) * radianos;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * radianos) * Math.cos(lat2 * radianos) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatarDistancia(km: number): string {
+  if (km < 1) {
+    return `${Math.round(km * 1000)} m`;
+  }
+  return `${km.toFixed(1).replace(".", ",")} km`;
 }
 
 export function rotuloCategoria(categoria: LocalLista["categoria"]) {
