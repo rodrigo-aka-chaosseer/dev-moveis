@@ -19,15 +19,14 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { usePreferencias } from "../src/preferencias/PreferenciasProvider";
 import { useSessao } from "../src/sessao/SessaoProvider";
+import { autenticar } from "../src/sessao/autenticar";
 import {
-  credenciaisSaoValidas,
-  normalizarEmail,
   validarLogin,
   type ErrosLogin,
 } from "../src/sessao/validarLogin";
@@ -238,25 +237,22 @@ export default function Login() {
       return;
     }
 
-    if (!credenciaisSaoValidas({ email, senha })) {
-      const mensagem = "E-mail ou senha incorretos.";
-      setErroGeral(mensagem);
-      tremer(tremorEmail);
-      tremer(tremorSenha);
-      vibrar(() =>
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
-      );
-      AccessibilityInfo.announceForAccessibility(mensagem);
-      emailRef.current?.focus();
-      return;
-    }
-
     setEnviando(true);
     try {
-      // BACKEND: aqui entra a autenticação (email, senha) → usuário e token.
-      // A senha vai na requisição e continua sem ser gravada no aparelho.
-      // Hoje `entrar` só guarda o e-mail; a senha morre com este componente.
-      await entrar(normalizarEmail(email));
+      const resultado = await autenticar({ email, senha });
+      if (!resultado.ok) {
+        setErroGeral(resultado.mensagem);
+        tremer(tremorEmail);
+        tremer(tremorSenha);
+        vibrar(() =>
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+        );
+        AccessibilityInfo.announceForAccessibility(resultado.mensagem);
+        setEnviando(false);
+        return;
+      }
+
+      await entrar(resultado.email, resultado.nome);
 
       // Sucesso visível antes de navegar: o check cresce, o aparelho confirma.
       setSucesso(true);
@@ -540,6 +536,19 @@ export default function Login() {
             </Animated.View>
 
             <Animated.View style={estiloEntrada(4)}>
+              <View style={styles.cadastro}>
+                <Text style={styles.cadastroTexto}>Primeira vez aqui?</Text>
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel="Criar uma conta"
+                  disabled={enviando}
+                  onPress={() => router.push("/cadastro" as Href)}
+                  hitSlop={8}
+                >
+                  <Text style={styles.cadastroLink}>Criar conta</Text>
+                </Pressable>
+              </View>
+
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Só dar uma olhada por hoje, sem conta"
@@ -716,11 +725,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.onDark,
   },
+  cadastro: {
+    minHeight: MIN_TOUCH,
+    marginTop: spacing.stackMd,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  cadastroTexto: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  cadastroLink: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.accentDark,
+  },
   // Mesmo peso do botão principal: quem só quer olhar não é cliente de
   // segunda classe. 48 como o botão fantasma da abertura.
   visitante: {
     minHeight: 48,
-    marginTop: spacing.stackMd,
     borderRadius: radius.button,
     borderWidth: 1.5,
     borderColor: colors.surface3,

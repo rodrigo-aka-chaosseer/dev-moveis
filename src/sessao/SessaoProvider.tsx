@@ -25,6 +25,7 @@ import {
   lerSessao,
   type Sessao,
 } from "./armazenamento";
+import { encerrarAutenticacao } from "./autenticar";
 
 export type EstadoSessao = "nenhuma" | "visitante" | "identificado";
 
@@ -32,10 +33,12 @@ export type ContextoSessao = {
   estado: EstadoSessao;
   /** Só existe quando `estado` é "identificado". */
   email?: string;
+  /** Pode não existir em sessões antigas, anteriores ao perfil. */
+  nome?: string;
   /** Verdadeiro para visitante e identificado. */
   temSessao: boolean;
   /** Grava antes de mudar o estado. Lança se a gravação falhar. */
-  entrar(email: string): Promise<void>;
+  entrar(email: string, nome?: string): Promise<void>;
   /** Muda o estado primeiro; se a gravação falhar, segue sem lançar. */
   entrarComoVisitante(): Promise<void>;
   /** Apaga do disco antes de limpar o estado. Lança se não conseguir apagar. */
@@ -77,10 +80,11 @@ type Props = {
 export function SessaoProvider({ sessaoInicial, children }: Props) {
   const [sessao, setSessao] = useState<Sessao | null>(sessaoInicial);
 
-  const entrar = useCallback(async (email: string) => {
+  const entrar = useCallback(async (email: string, nome?: string) => {
     const nova: Sessao = {
       modo: "identificado",
       email,
+      nome,
       entradoEm: new Date().toISOString(),
     };
     await gravarSessao(nova);
@@ -108,12 +112,14 @@ export function SessaoProvider({ sessaoInicial, children }: Props) {
   const sair = useCallback(async () => {
     await apagarSessao();
     setSessao(null);
+    await encerrarAutenticacao();
   }, []);
 
   const valor = useMemo<ContextoSessao>(
     () => ({
       estado: sessao?.modo ?? "nenhuma",
       email: sessao?.modo === "identificado" ? sessao.email : undefined,
+      nome: sessao?.modo === "identificado" ? sessao.nome : undefined,
       temSessao: sessao !== null,
       entrar,
       entrarComoVisitante,

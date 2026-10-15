@@ -16,6 +16,7 @@ import {
   useSessaoInicial,
 } from "../src/sessao/SessaoProvider";
 import { PreferenciasProvider } from "../src/preferencias/PreferenciasProvider";
+import { LocalizacaoProvider } from "../src/localizacao";
 
 // Segura a splash nativa até a fonte carregar. Sem isso dá pra ver o título
 // piscando na fonte do sistema antes da Jakarta entrar. Também espera a
@@ -49,8 +50,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <SessaoProvider sessaoInicial={sessao.sessaoInicial}>
         <PreferenciasProvider>
-          <StatusBar style="light" />
-          <Rotas />
+          <LocalizacaoProvider>
+            <StatusBar style="light" />
+            <Rotas />
+          </LocalizacaoProvider>
         </PreferenciasProvider>
       </SessaoProvider>
     </SafeAreaProvider>
@@ -75,8 +78,10 @@ function Rotas() {
       <Stack.Protected guard={temSessao}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="roteiro/[id]" />
+        <Stack.Screen name="localizacao" />
       </Stack.Protected>
       <Stack.Screen name="login" />
+      <Stack.Screen name="cadastro" />
       <Stack.Screen name="onboarding" />
     </Stack>
   );

@@ -1,13 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createClient } from "@supabase/supabase-js";
 
 import { buscarLocalPorId, listarLocais } from "./listarLocais";
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(),
+const supabaseMock = vi.hoisted(() => ({
+  cliente: null as { from: ReturnType<typeof vi.fn> } | null,
 }));
 
-const createClientMock = vi.mocked(createClient);
+vi.mock("../lib/supabase", () => ({
+  get supabase() {
+    return supabaseMock.cliente;
+  },
+}));
 
 const LINHA_SALVADOR = {
   id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
@@ -58,13 +61,11 @@ function consultaFalsa(resultado: { data: unknown; error: unknown }) {
 describe("listarLocais", () => {
   const urlAntes = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const chaveAntes = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  const publishableAntes = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   beforeEach(() => {
     delete process.env.EXPO_PUBLIC_SUPABASE_URL;
     delete process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-    delete process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    createClientMock.mockReset();
+    supabaseMock.cliente = null;
   });
 
   afterEach(() => {
@@ -72,31 +73,29 @@ describe("listarLocais", () => {
     else process.env.EXPO_PUBLIC_SUPABASE_URL = urlAntes;
     if (chaveAntes === undefined) delete process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
     else process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = chaveAntes;
-    if (publishableAntes === undefined) delete process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    else process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = publishableAntes;
   });
 
   it("cai no mock quando a URL do Supabase não está definida", async () => {
     const lista = await listarLocais("salvador");
 
-    expect(createClientMock).not.toHaveBeenCalled();
-    expect(lista.map((local) => local.id)).toContain("terreiro-ile-axe-opo-afonja");
+    expect(lista.map((local) => local.id)).toContain("casa-carnaval-bahia");
+    expect(lista.every((local) => local.cidadeId === "salvador")).toBe(true);
   });
 
-  it("devolve lista vazia no mock quando a cidade não tem lugares", async () => {
-    const lista = await listarLocais("recife");
+  it("no mock filtra pela cidade escolhida", async () => {
+    const recife = await listarLocais("recife");
 
-    expect(lista).toEqual([]);
+    expect(recife.map((local) => local.id)).toContain("paco-frevo");
+    expect(recife.every((local) => local.cidadeId === "recife")).toBe(true);
   });
 
   it("lê do banco, monta tags e ignora lugar de outra cidade", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "chave-anon";
     const { from, builder } = consultaFalsa({
       data: [LINHA_SALVADOR, LINHA_RECIFE],
       error: null,
     });
-    createClientMock.mockReturnValue({ from } as never);
+    supabaseMock.cliente = { from };
 
     const lista = await listarLocais("salvador");
 
@@ -116,14 +115,13 @@ describe("listarLocais", () => {
 
   it("filtra por cidade_id quando o painel envia essa coluna", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "chave-anon";
     const { from } = consultaFalsa({
       data: [
         { ...LINHA_SALVADOR, cidade_id: "recife", latitude: -12.9737, longitude: -38.5138 },
       ],
       error: null,
     });
-    createClientMock.mockReturnValue({ from } as never);
+    supabaseMock.cliente = { from };
 
     const lista = await listarLocais("salvador");
 
@@ -132,42 +130,37 @@ describe("listarLocais", () => {
 
   it("devolve lista vazia quando o banco não tem lugares publicados", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "chave-anon";
     const { from } = consultaFalsa({ data: [], error: null });
-    createClientMock.mockReturnValue({ from } as never);
+    supabaseMock.cliente = { from };
 
     await expect(listarLocais("salvador")).resolves.toEqual([]);
   });
 
   it("propaga erro do banco para a tela mostrar ERRO_LISTA", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "chave-anon";
     const { from } = consultaFalsa({ data: null, error: { message: "boom" } });
-    createClientMock.mockReturnValue({ from } as never);
+    supabaseMock.cliente = { from };
 
     await expect(listarLocais("salvador")).rejects.toBeTruthy();
   });
 
-  it("não usa mock se a URL existe sem a chave", async () => {
+  it("não usa mock se a URL existe sem cliente", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
 
     await expect(listarLocais("salvador")).rejects.toBeTruthy();
-    expect(createClientMock).not.toHaveBeenCalled();
   });
 });
 
 describe("buscarLocalPorId", () => {
   beforeEach(() => {
     delete process.env.EXPO_PUBLIC_SUPABASE_URL;
-    delete process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-    createClientMock.mockReset();
+    supabaseMock.cliente = null;
   });
 
   it("cai no mock quando a URL não está definida", async () => {
-    const local = await buscarLocalPorId("galeria-arte-negra");
+    const local = await buscarLocalPorId("casa-carnaval-bahia");
 
-    expect(createClientMock).not.toHaveBeenCalled();
-    expect(local?.nome).toBe("Galeria Arte Negra");
+    expect(local?.nome).toBe("Casa do Carnaval da Bahia");
   });
 
   it("devolve null no mock quando o id não existe", async () => {
@@ -176,9 +169,8 @@ describe("buscarLocalPorId", () => {
 
   it("lê um lugar publicado pelo id, com tags", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "chave-anon";
     const { from, builder } = consultaFalsa({ data: LINHA_SALVADOR, error: null });
-    createClientMock.mockReturnValue({ from } as never);
+    supabaseMock.cliente = { from };
 
     const local = await buscarLocalPorId(LINHA_SALVADOR.id);
 
@@ -195,18 +187,16 @@ describe("buscarLocalPorId", () => {
 
   it("devolve null quando o lugar não existe ou está arquivado", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "chave-anon";
     const { from } = consultaFalsa({ data: null, error: null });
-    createClientMock.mockReturnValue({ from } as never);
+    supabaseMock.cliente = { from };
 
     await expect(buscarLocalPorId("sumiu")).resolves.toBeNull();
   });
 
   it("propaga erro do banco para a tela mostrar ERRO_UM", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "chave-anon";
     const { from } = consultaFalsa({ data: null, error: { message: "boom" } });
-    createClientMock.mockReturnValue({ from } as never);
+    supabaseMock.cliente = { from };
 
     await expect(buscarLocalPorId("x")).rejects.toBeTruthy();
   });

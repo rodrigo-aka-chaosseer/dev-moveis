@@ -1,10 +1,6 @@
+import { supabase } from "../lib/supabase";
 import { locais, type LocalLista } from "../mocks/locais";
 import { CIDADES, type CidadeId } from "../preferencias/dados";
-import {
-  chaveSupabase,
-  criarClienteSupabase,
-  supabaseUrlDefinida,
-} from "../supabase/cliente";
 
 const ATRASO_MS = 250;
 const RAIO_CIDADE_KM = 30;
@@ -63,14 +59,15 @@ async function buscarDoMock(id: string): Promise<LocalLista | null> {
   return locais.find((local) => local.id === id) ?? null;
 }
 
+function supabaseUrlDefinida(): boolean {
+  return Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL?.trim());
+}
+
 function consultaPublica() {
-  if (!chaveSupabase()) {
+  if (!supabase) {
     throw new Error("Supabase não configurado.");
   }
-  return criarClienteSupabase()
-    .from("locais")
-    .select(SELECT_LOCAL)
-    .is("arquivado_em", null);
+  return supabase.from("locais").select(SELECT_LOCAL).is("arquivado_em", null);
 }
 
 type LinhaLocal = {

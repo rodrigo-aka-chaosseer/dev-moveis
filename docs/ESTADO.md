@@ -16,6 +16,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [ ] RAÍZES-03 — navegação por abas (Levi)
 - [ ] RAÍZES-04 — tela de perfil
 - [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
+- [x] RAÍZES-14 — primeiro lote com 8 lugares curados de Salvador e Recife
 
 ## Pendências que nasceram do login (decisão 4)
 
@@ -60,4 +61,15 @@ história, fonte, acessibilidade e ambiente sensorial escritos à mão, e isso
 não sai de API nenhuma. Sem uns 20 a 30 lugares prontos, o app chega vazio na
 apresentação, e essa é a única parte que não dá pra virar na véspera.
 
-Hoje nenhuma das quatro tasks é de conteúdo. Falta dono pra isso.
+O primeiro lote editorial está em `src/mocks/locais.ts`, com 8 lugares reais,
+fontes e avisos de visitação quando aplicáveis. O risco diminuiu, mas ainda é
+preciso ampliar e revisar o catálogo até a meta de 20 a 30 lugares antes da
+apresentação.
+
+## Perfil e sincronização
+
+A tela de perfil já consome sessão e preferências locais, diferencia visitante
+de pessoa autenticada e oferece logout seguro. A sincronização da tabela
+`preferencias` continua pendente da RAÍZES-22: a sessão atual ainda não possui
+UUID/token do Supabase, portanto não existe `usuario_id` autenticado para um
+upsert protegido por RLS.
