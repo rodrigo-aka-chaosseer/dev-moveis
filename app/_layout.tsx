@@ -81,6 +81,7 @@ function Rotas() {
         <Stack.Screen name="localizacao" />
       </Stack.Protected>
       <Stack.Screen name="login" />
+      <Stack.Screen name="cadastro" />
       <Stack.Screen name="onboarding" />
     </Stack>
   );
