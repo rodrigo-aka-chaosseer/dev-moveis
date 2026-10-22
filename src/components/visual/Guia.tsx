@@ -48,7 +48,7 @@ export function Capa({ local, grande = false }: { local: LocalLista; grande?: bo
 }
 export function CartaoLugar({ local }: { local: LocalLista }) {
   const router = useRouter();
-  return <Pressable accessibilityRole="button" accessibilityLabel={`Conhecer ${local.nome}`} onPress={() => router.push(`/roteiro/${local.id}` as Href)} style={({ pressed }) => [v.cartao, pressed && { opacity: 0.8 }]}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Conhecer ${local.nome}`} onPress={() => router.push(`/local/${local.id}` as Href)} style={({ pressed }) => [v.cartao, pressed && { opacity: 0.8 }]}>
     <Capa local={local} /><View style={v.cartaoCorpo}><Text style={v.cartaoTitulo}>{local.nome}</Text><Text numberOfLines={2} style={v.descricao}>{local.porQueConhecer}</Text>
       <View style={v.meta}><Ionicons name="location-outline" size={14} color={colors.accentDark} /><Text style={v.metaTexto}>{local.distancia.replace(" (aprox. pelo centro da cidade)", " · aprox.")}</Text><Text style={v.preco}>{rotuloPreco(local) || `~${local.tempoMedioMin} min`}</Text></View>
     </View></Pressable>;

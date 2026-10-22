@@ -55,7 +55,7 @@ describe("aba Mapa", () => {
     await act(async () => mapa.props.selecionar(local.id));
     expect(texto()).toContain(local.porQueConhecer);
     await clicar("Ver detalhes de");
-    expect(mocks.push).toHaveBeenCalledWith(`/roteiro/${local.id}`);
+    expect(mocks.push).toHaveBeenCalledWith(`/local/${local.id}`);
   });
 
   it("abre a explicação dentro do cartão tocado e recolhe ao tocar novamente", async () => {

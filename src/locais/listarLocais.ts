@@ -5,7 +5,7 @@ import { CIDADES, type CidadeId } from "../preferencias/dados";
 
 const ATRASO_MS = 250;
 const RAIO_CIDADE_KM = 30;
-const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome))";
+export const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome))";
 
 const ROTULOS_CATEGORIA: Record<LocalLista["categoria"], string> = {
   gastronomia: "Gastronomia",
@@ -60,8 +60,18 @@ async function buscarDoMock(id: string): Promise<LocalLista | null> {
   return locais.find((local) => local.id === id) ?? null;
 }
 
-function supabaseUrlDefinida(): boolean {
+export function supabaseUrlDefinida(): boolean {
   return Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL?.trim());
+}
+
+/**
+ * Linha de `locais` vinda de um join (roteiro_paradas → locais) para o
+ * formato das telas. null quando a linha não veio (lugar arquivado: o RLS
+ * de `locais` esconde) ou não tem o mínimo para ser um lugar.
+ */
+export function linhaParaLocal(valor: unknown): LocalLista | null {
+  if (!ehLinhaLocal(valor)) return null;
+  return mapearLocal(valor, cidadeDoLocal(valor));
 }
 
 function consultaPublica() {
