@@ -1,279 +1,38 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { Image } from "expo-image";
+import { fotosLocais } from "../../src/mocks/fotos";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import {
-  rotuloCategoria,
-  rotuloFonte,
-  rotuloHorarios,
-  rotuloPreco,
-  rotuloTempo,
-} from "../../src/locais/listarLocais";
+import { Tela, Botao, Capa, Estado, Secao, v } from "../../src/components/visual/Guia";
 import { useLocal } from "../../src/locais/useLocais";
-import { colors, fonts, MIN_TOUCH, radius, spacing } from "../../src/theme/tokens";
+import { rotuloCategoria, rotuloFonte, rotuloHorarios, rotuloPreco, rotuloTempo } from "../../src/locais/listarLocais";
+import { ordenarPorProximidade } from "../../src/locais/proximidade";
+import { useLocalizacao } from "../../src/localizacao";
+import { colors, fonts } from "../../src/theme/tokens";
 
 export default function DetalheLocal() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { local, carregando, erro } = useLocal(Array.isArray(id) ? id[0] : id);
-
-  if (carregando) {
-    return (
-      <View style={styles.estado}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
-
-  if (erro || !local) {
-    return (
-      <View style={[styles.estado, { paddingTop: insets.top }]}>
-        <Text style={styles.erro}>{erro ?? "Lugar não encontrado."}</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Voltar"
-          onPress={() => router.back()}
-          style={styles.voltarTexto}
-        >
-          <Text style={styles.voltarRotulo}>Voltar</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
-  const horario = rotuloHorarios(local);
-  const preco = rotuloPreco(local);
-  const pills = [horario, preco, rotuloTempo(local)].filter(Boolean);
-
-  return (
-    <View style={styles.tela}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-      >
-        <View style={styles.hero}>
-          <Image
-            source={{ uri: local.imagemUrl ?? undefined }}
-            style={styles.heroFoto}
-            contentFit="cover"
-          />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Voltar"
-            onPress={() => router.back()}
-            style={[styles.voltar, { top: insets.top + 8 }]}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.onDark} />
-          </Pressable>
-        </View>
-
-        <View style={styles.corpo}>
-          <View style={styles.meta}>
-            <Text style={styles.categoria}>{rotuloCategoria(local.categoria)}</Text>
-            <Text style={styles.distancia}>{local.distancia}</Text>
-          </View>
-          <Text style={styles.nome}>{local.nome}</Text>
-
-          {pills.length > 0 ? (
-            <View style={styles.pills}>
-              {pills.map((pill) => (
-                <Text key={pill} style={styles.pill}>
-                  {pill}
-                </Text>
-              ))}
-            </View>
-          ) : null}
-
-          <View style={[styles.secao, styles.destaque]}>
-            <Text style={styles.secaoTitulo}>Por que conhecer?</Text>
-            <Text style={styles.destaqueTexto}>{local.porQueConhecer}</Text>
-          </View>
-
-          {local.avisoVisitacao ? (
-            <View style={styles.secao}>
-              <Text style={styles.secaoTitulo}>Aviso de visitação</Text>
-              <Text style={styles.secaoTexto}>{local.avisoVisitacao}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.secao}>
-            <Text style={styles.secaoTitulo}>História</Text>
-            <Text style={styles.secaoTexto}>{local.historia}</Text>
-          </View>
-
-          {local.tags.length > 0 ? (
-            <View style={styles.secao}>
-              <Text style={styles.secaoTitulo}>Diversidade relacionada</Text>
-              <View style={styles.tags}>
-                {local.tags.map((tag) => (
-                  <Text key={tag} style={styles.tagAccent}>
-                    {tag}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          ) : null}
-
-          <View style={styles.fonte}>
-            <Text style={styles.fonteTexto}>{rotuloFonte(local)}</Text>
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
+  const { coordenadas } = useLocalizacao();
+  const voltar = () => { if (router.canGoBack()) router.back(); else router.replace("/(tabs)/explorar"); };
+  if (carregando) return <Tela><Estado titulo="Preparando essa descoberta…" carregando /></Tela>;
+  if (erro || !local) return <Tela><Estado titulo="Lugar indisponível" descricao={erro ?? "Este lugar não está mais disponível no catálogo."} /><Botao texto="Voltar a explorar" onPress={voltar} /></Tela>;
+  const lugar = ordenarPorProximidade([local], local.cidadeId, coordenadas)[0];
+  return <Tela>
+    <View style={s.topo}><Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={voltar} style={s.voltar}><Ionicons name="arrow-back" size={22} color={colors.earth} /></Pressable><Text style={v.legenda}>UMA NOVA DESCOBERTA</Text><Ionicons name="compass-outline" size={22} color={colors.earth} /></View>
+    <View style={s.capa}><Capa local={lugar} grande /></View>
+    <Text style={v.legenda}>{rotuloCategoria(lugar.categoria)}</Text><Text accessibilityRole="header" style={v.titulo}>{lugar.nome}</Text>
+    <View style={s.linha}><Ionicons name="location-outline" size={18} color={colors.accentDark} /><Text style={[v.descricao, { flex: 1 }]}>{lugar.endereco}</Text></View>
+    <View style={s.fatos}>{([
+      ["wallet-outline", rotuloPreco(lugar) || "Preço não informado"], ["time-outline", rotuloTempo(lugar)],
+    ] as const).map(([icone, texto]) => <View key={icone} style={s.fato}><Ionicons name={icone} size={22} color={colors.accentDark} /><Text style={s.fatoTexto}>{texto}</Text></View>)}</View>
+    <View style={[v.bloco, { backgroundColor: colors.paper }]}><Ionicons name="sparkles-outline" size={23} color={colors.accentDark} /><Text style={v.secaoTitulo}>Por que vale conhecer</Text><Text style={[v.descricao, { color: colors.earth }]}>{lugar.porQueConhecer}</Text></View>
+    {lugar.avisoVisitacao ? <View style={v.bloco}><Text style={v.secaoTitulo}>Antes de visitar</Text><Text style={v.descricao}>{lugar.avisoVisitacao}</Text></View> : null}
+    <Secao titulo="Histórias que ficam" /><Text style={s.historia}>{lugar.historia}</Text>
+    <View style={v.bloco}><Text style={v.secaoTitulo}>Planeje sua visita</Text><Text style={v.descricao}>{rotuloHorarios(lugar) || "Horários não informados. Consulte a fonte antes de visitar."}</Text><Text style={v.descricao}>{lugar.distancia} · em linha reta</Text><Botao texto="Explorar o mapa" secundario onPress={() => router.push("/(tabs)/mapa")} /></View>
+    {lugar.tags.length ? <View style={v.etiquetas}>{lugar.tags.map((tag) => <View key={tag} style={v.etiqueta}><Text style={v.etiquetaTexto}>{tag}</Text></View>)}</View> : null}
+    <Text style={[v.descricao, { fontSize: 11 }]}>{rotuloFonte(lugar)}</Text>
+    {!lugar.imagemUrl && fotosLocais[lugar.id] ? <Pressable accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }} onPress={() => { void Linking.openURL(fotosLocais[lugar.id].pagina); }}><Text style={v.descricao}>Fotografia: {fotosLocais[lugar.id].autor} · {fotosLocais[lugar.id].licenca}. Ver original e licença ↗</Text></Pressable> : null}
+  </Tela>;
 }
-
-const styles = StyleSheet.create({
-  tela: {
-    flex: 1,
-    backgroundColor: colors.surface,
-  },
-  estado: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.pageX,
-    gap: spacing.stackMd,
-  },
-  erro: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.error,
-    textAlign: "center",
-  },
-  voltarTexto: {
-    minHeight: MIN_TOUCH,
-    justifyContent: "center",
-  },
-  voltarRotulo: {
-    fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: colors.accent,
-  },
-  hero: {
-    height: 280,
-    position: "relative",
-    backgroundColor: colors.earth,
-  },
-  heroFoto: {
-    width: "100%",
-    height: "100%",
-  },
-  voltar: {
-    position: "absolute",
-    left: spacing.pageX,
-    width: MIN_TOUCH,
-    height: MIN_TOUCH,
-    borderRadius: MIN_TOUCH / 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  corpo: {
-    paddingHorizontal: spacing.pageX,
-    paddingTop: 20,
-  },
-  meta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  categoria: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    color: colors.accent,
-  },
-  distancia: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  nome: {
-    fontFamily: fonts.extrabold,
-    fontSize: 26,
-    color: colors.text,
-    letterSpacing: -0.4,
-    marginBottom: 14,
-  },
-  pills: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 20,
-  },
-  pill: {
-    backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.surface3,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    color: colors.textMuted,
-    overflow: "hidden",
-  },
-  secao: {
-    marginBottom: 24,
-  },
-  secaoTitulo: {
-    fontFamily: fonts.extrabold,
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 8,
-  },
-  secaoTexto: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 22,
-    color: colors.textMuted,
-  },
-  destaque: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.card,
-    padding: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
-  },
-  destaqueTexto: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 22,
-    color: colors.text,
-  },
-  tags: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  tagAccent: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    fontFamily: fonts.semibold,
-    fontSize: 10,
-    color: colors.accentDark,
-    overflow: "hidden",
-  },
-  fonte: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.button,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  fonteTexto: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: colors.tabInactive,
-  },
-});
+const s = StyleSheet.create({ topo: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, voltar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }, capa: { borderRadius: 26, overflow: "hidden" }, linha: { flexDirection: "row", gap: 8, alignItems: "center" }, fatos: { flexDirection: "row", gap: 12 }, fato: { flex: 1, padding: 20, backgroundColor: colors.surface, borderRadius: 22, gap: 10 }, fatoTexto: { fontFamily: fonts.semibold, color: colors.earth, fontSize: 14 }, historia: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 26, color: colors.earth } });

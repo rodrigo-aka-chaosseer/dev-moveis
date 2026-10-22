@@ -1,186 +1,60 @@
+import { useState } from "react";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 import { useSessao } from "../src/sessao/SessaoProvider";
-import { colors, fonts, gradients, radius, spacing } from "../src/theme/tokens";
-
-const BACKGROUND = require("../assets/images/splash-bg.jpg");
-
-// Caminho explícito: esta tela e `app/(tabs)/index.tsx` disputam "/".
-// Quem já tem sessão nem chega aqui: a guarda em app/_layout.tsx tira a
-// abertura da pilha.
-const DESTINO_ABAS = "/(tabs)/explorar";
+import { Botao, v } from "../src/components/visual/Guia";
+import { colors, fonts } from "../src/theme/tokens";
+import foto from "../assets/images/cidade-abertura.creditos.json";
 
 export default function Abertura() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { entrarComoVisitante } = useSessao();
   const [entrando, setEntrando] = useState(false);
-
-  async function explorarSemConta() {
-    if (entrando) return;
+  async function explorar() {
     setEntrando(true);
     await entrarComoVisitante();
-    router.replace(DESTINO_ABAS);
+    router.replace("/(tabs)");
   }
-
-  return (
-    <View style={styles.screen}>
-      <Image
-        source={BACKGROUND}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        transition={300}
-        accessible={false}
-      />
-
-      <LinearGradient
-        colors={gradients.screenTop.colors}
-        locations={gradients.screenTop.locations}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={gradients.screenBottom.colors}
-        locations={gradients.screenBottom.locations}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-
-      <View
-        style={[
-          styles.content,
-          { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
-        ]}
-      >
-        <View style={styles.brand}>
-          <Text style={styles.mark}>Raízes</Text>
-          <Text style={styles.eyebrow}>Descoberta cultural</Text>
-        </View>
-
-        <View style={styles.actions}>
-          <Text style={styles.blurb}>
-            Conheça uma cidade pelas pessoas, culturas e histórias que
-            construíram sua identidade.
-          </Text>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Começar a explorar"
-            onPress={() => router.push("/login")}
-            style={({ pressed }) => [
-              styles.primaryWrapper,
-              pressed && styles.primaryPressed,
-            ]}
-          >
-            <LinearGradient
-              colors={[colors.accent, colors.accentDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.primary}
-            >
-              <Text style={styles.primaryLabel}>Começar a explorar</Text>
-            </LinearGradient>
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Explorar sem responder, como visitante"
-            accessibilityState={{ disabled: entrando }}
-            disabled={entrando}
-            onPress={explorarSemConta}
-            style={({ pressed }) => [styles.ghost, pressed && styles.ghostPressed]}
-          >
-            <Text style={styles.ghostLabel}>Explorar sem responder</Text>
-          </Pressable>
-        </View>
+  return <ScrollView style={s.tela} contentContainerStyle={s.conteudo} bounces={false}>
+    <StatusBar style="light" />
+    <View style={s.fundo}>
+      <Image source={require("../assets/images/cidade-abertura.jpg")} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="center" accessible={false} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.veu]} />
+      <LinearGradient colors={["rgba(28,25,23,0.12)", "rgba(28,25,23,0.65)"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <View style={[s.marcaBloco, { paddingTop: insets.top + 28 }]}>
+        <Text accessibilityRole="header" style={s.marca}>Raízes</Text>
+        <View style={s.selo}><Text style={s.seloTexto}>CULTURA QUE CONECTA</Text></View>
       </View>
+      <Pressable accessibilityRole="link" accessibilityLabel="Créditos da fotografia do Pelourinho" onPress={() => { void Linking.openURL(foto.pagina); }} style={s.creditoToque}>
+        <Text style={s.credito}>Pelourinho · {foto.autor} · {foto.licenca}</Text>
+      </Pressable>
     </View>
-  );
+    <View style={[s.folha, { paddingBottom: insets.bottom + 24 }]}>
+      <Text style={v.legenda}>DESCUBRA. SINTA. PERTENÇA.</Text>
+      <Text style={s.titulo}>Um novo olhar para cada lugar.</Text>
+      <Text style={s.descricao}>Conheça as histórias, as pessoas e a cultura que fazem uma cidade ser única.</Text>
+      <Botao texto={entrando ? "Preparando seu caminho…" : "Explorar sem conta"} disabled={entrando} onPress={explorar} />
+      <Botao texto="Entrar ou criar conta" secundario onPress={() => router.push("/login")} />
+    </View>
+  </ScrollView>;
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.pageX,
-  },
-  brand: {
-    gap: 9,
-  },
-  mark: {
-    fontFamily: fonts.extrabold,
-    fontSize: 42,
-    lineHeight: 46,
-    letterSpacing: -0.84,
-    color: colors.onDark,
-  },
-  eyebrow: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    letterSpacing: 0.48,
-    textTransform: "uppercase",
-    color: colors.onDarkMuted,
-  },
-  actions: {
-    gap: 10,
-  },
-  blurb: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 24,
-    color: colors.onDarkSoft,
-    maxWidth: 268,
-    marginBottom: 8,
-  },
-  primaryWrapper: {
-    borderRadius: radius.button,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  primaryPressed: {
-    transform: [{ scale: 0.97 }],
-    shadowOpacity: 0.12,
-  },
-  primary: {
-    height: 52,
-    borderRadius: radius.button,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 16,
-    color: colors.onDark,
-  },
-  // 48 e não 41 como no protótipo: abaixo de 44 o toque erra com frequência.
-  ghost: {
-    height: 48,
-    borderRadius: radius.button,
-    borderWidth: 1.5,
-    borderColor: colors.borderOnDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ghostPressed: {
-    transform: [{ scale: 0.98 }],
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-  },
-  ghostLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: colors.onDarkMuted,
-  },
+const s = StyleSheet.create({
+  tela: { flex: 1, backgroundColor: colors.paper },
+  conteudo: { flexGrow: 1 },
+  fundo: { flex: 1, minHeight: 320, backgroundColor: colors.earth },
+  veu: { backgroundColor: "rgba(28,25,23,0.42)" },
+  marcaBloco: { paddingHorizontal: 28, paddingBottom: 70, gap: 6 },
+  marca: { fontFamily: fonts.extrabold, fontSize: 58, lineHeight: 70, letterSpacing: -2.5, color: colors.onDark },
+  selo: { alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 7, backgroundColor: colors.onDarkSoft, borderRadius: 20 },
+  seloTexto: { fontFamily: fonts.semibold, fontSize: 9, letterSpacing: 1.2, color: colors.earth },
+  creditoToque: { position: "absolute", bottom: 30, right: 16, minHeight: 44, justifyContent: "center" },
+  credito: { fontSize: 8, color: colors.onDarkMuted },
+  folha: { backgroundColor: colors.paper, marginTop: -28, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 26, paddingHorizontal: 28, gap: 16 },
+  titulo: { fontFamily: fonts.extrabold, fontSize: 32, lineHeight: 38, letterSpacing: -1.2, color: colors.text },
+  descricao: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 22, color: colors.textMuted },
 });

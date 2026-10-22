@@ -27,6 +27,7 @@ export const colors = {
   /* Superfície clara do passaporte cultural. Mantida separada da paleta
      geral para a metáfora de documento poder evoluir sem alterar o app. */
   paper: "#f4ede3",
+  profileBackground: "#eee5da",
   documentPaper: "#fbf7f1",
   documentInk: "#5c3d2e",
   inkMuted: "rgba(92, 61, 46, 0.66)",
@@ -44,12 +45,12 @@ export const colors = {
 
 export const radius = {
   document: 3,
-  button: 10,
-  input: 12,
-  card: 14,
-  large: 20,
+  button: 18,
+  input: 16,
+  card: 24,
+  large: 28,
   /** Cantos de cima da folha que sobe sobre o bloco terracota. */
-  sheet: 24,
+  sheet: 32,
 } as const;
 
 export const spacing = {

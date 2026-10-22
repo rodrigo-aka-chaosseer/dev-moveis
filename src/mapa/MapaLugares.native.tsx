@@ -83,7 +83,7 @@ function MapaConfigurado({ cidadeId, locais, coordenadas, selecionadoId, selecio
 }
 
 const styles = StyleSheet.create({
-  container: { height: 330, backgroundColor: colors.surface2 },
+  container: { height: 390, marginHorizontal: 24, borderRadius: 26, overflow: "hidden", backgroundColor: colors.paper },
   carregando: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center" },
   aviso: { padding: 16, backgroundColor: colors.surface2, color: colors.text },
   botao: { minHeight: MIN_TOUCH, justifyContent: "center" },
