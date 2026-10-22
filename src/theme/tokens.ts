@@ -3,9 +3,9 @@
  * cor nova, coloca aqui antes de usar na tela.
  */
 export const colors = {
-  accent: "#d4622a",
+  accent: "#c75926",
   userLocation: "#2563eb",
-  accentDark: "#9a3412",
+  accentDark: "#8f3f1b",
   earth: "#5c3d2e",
   bg: "#12100e",
 
@@ -17,8 +17,8 @@ export const colors = {
   surface: "#ffffff",
   surface2: "#faf7f4",
   surface3: "#e7e1dc",
-  accentSoft: "#fff7ed",
-  accentTint: "#ffeadb",
+  accentSoft: "#fbf0e9",
+  accentTint: "#f5dfcf",
   text: "#1c1917",
   textMuted: "#78716c",
   tabInactive: "#a8a29e",
@@ -36,7 +36,7 @@ export const colors = {
   /** Campos de formulário. A borda de foco repete o accent de propósito:
    *  se um dia o foco mudar de cor, muda aqui e não em cada tela. */
   inputBorder: "#e7e1dc",
-  inputBorderFocus: "#d4622a",
+  inputBorderFocus: "#c75926",
 
   /** Erro de formulário. Vermelho terroso, não o vermelho puro do sistema. */
   error: "#b91c1c",
@@ -82,7 +82,7 @@ export const gradients = {
   /** Véu terracota sobre a mesma foto, no login. Escurece para o pé, onde
    *  ficam marca e frase em branco: sobre o accentDark o contraste passa AA. */
   loginVeil: {
-    colors: ["rgba(212, 98, 42, 0.78)", "rgba(154, 52, 18, 0.9)", "rgba(92, 61, 46, 0.96)"],
+    colors: ["rgba(199, 89, 38, 0.88)", "rgba(143, 63, 27, 0.94)", "rgba(92, 61, 46, 0.96)"],
     locations: [0, 0.55, 1],
   },
 } as const;
