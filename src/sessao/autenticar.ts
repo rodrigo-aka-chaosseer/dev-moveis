@@ -9,6 +9,8 @@ type SucessoLogin = {
   ok: true;
   email: string;
   nome?: string;
+  /** `user.id` do Supabase. Não existe no modo mock, sem `.env`. */
+  usuarioId?: string;
 };
 
 export type ResultadoAutenticacao =
@@ -42,7 +44,12 @@ export async function autenticar(
       return { ok: false, mensagem: traduzirErroLogin(error.message, error.status) };
     }
     const nome = lerNome(data.user?.user_metadata);
-    return { ok: true, email: data.user?.email ?? email, nome };
+    return {
+      ok: true,
+      email: data.user?.email ?? email,
+      nome,
+      usuarioId: data.user?.id,
+    };
   } catch {
     return { ok: false, mensagem: MENSAGEM_REDE };
   }
@@ -77,6 +84,7 @@ export async function cadastrar(dados: {
       ok: true,
       email: data.user?.email ?? email,
       nome,
+      usuarioId: data.user?.id,
       precisaConfirmarEmail: data.session === null,
     };
   } catch {
@@ -93,7 +101,7 @@ export async function encerrarAutenticacao(): Promise<void> {
   }
 }
 
-function lerNome(metadados: unknown): string | undefined {
+export function lerNome(metadados: unknown): string | undefined {
   if (typeof metadados !== "object" || metadados === null) return undefined;
   const nome = (metadados as Record<string, unknown>).nome;
   return typeof nome === "string" && nome.trim() ? nome.trim() : undefined;

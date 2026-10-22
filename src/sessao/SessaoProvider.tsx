@@ -4,14 +4,15 @@
  * então nenhuma tela chega a ver um estado "carregando".
  *
  * Para o dono das abas: `estado === "visitante"` é quem entrou sem conta e
- * deve ver só a aba Explorar. Para a tela de perfil: `sair()`.
+ * deve ver só a aba Explorar. Para a tela de perfil: `sair()`. Para quem
+ * grava no Supabase: `usuarioId`, que só existe para conta identificada com
+ * Supabase configurado.
  *
- * BACKEND: `entrar` passa a receber o resultado da autenticação (usuário e
- * token) em vez de só o e-mail, e `sair` também revoga o token no servidor.
+ * As regras (conferência com o `supabase.auth`, logout) moram em
+ * `controleSessao.ts`; este arquivo só liga o controle ao React.
  */
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -19,13 +20,8 @@ import {
   type ReactNode,
 } from "react";
 
-import {
-  apagarSessao,
-  gravarSessao,
-  lerSessao,
-  type Sessao,
-} from "./armazenamento";
-import { encerrarAutenticacao } from "./autenticar";
+import { lerSessao, type Sessao } from "./armazenamento";
+import { criarControleSessao } from "./controleSessao";
 
 export type EstadoSessao = "nenhuma" | "visitante" | "identificado";
 
@@ -35,13 +31,21 @@ export type ContextoSessao = {
   email?: string;
   /** Pode não existir em sessões antigas, anteriores ao perfil. */
   nome?: string;
+  /**
+   * `user.id` do Supabase. Só existe quando `estado` é "identificado" e o
+   * Supabase está configurado; no modo mock fica vazio.
+   */
+  usuarioId?: string;
   /** Verdadeiro para visitante e identificado. */
   temSessao: boolean;
   /** Grava antes de mudar o estado. Lança se a gravação falhar. */
-  entrar(email: string, nome?: string): Promise<void>;
+  entrar(email: string, nome?: string, usuarioId?: string): Promise<void>;
   /** Muda o estado primeiro; se a gravação falhar, segue sem lançar. */
   entrarComoVisitante(): Promise<void>;
-  /** Apaga do disco antes de limpar o estado. Lança se não conseguir apagar. */
+  /**
+   * Apaga do disco, limpa o estado e encerra no Supabase. Lança só se não
+   * conseguir apagar do disco; servidor fora do ar não prende na conta.
+   */
   sair(): Promise<void>;
 };
 
@@ -79,54 +83,25 @@ type Props = {
 
 export function SessaoProvider({ sessaoInicial, children }: Props) {
   const [sessao, setSessao] = useState<Sessao | null>(sessaoInicial);
+  const [controle] = useState(() => criarControleSessao(sessaoInicial, setSessao));
 
-  const entrar = useCallback(async (email: string, nome?: string) => {
-    const nova: Sessao = {
-      modo: "identificado",
-      email,
-      nome,
-      entradoEm: new Date().toISOString(),
-    };
-    await gravarSessao(nova);
-    setSessao(nova);
-  }, []);
+  // Confere com o Supabase uma vez por abertura do app; o controle ignora a
+  // segunda montagem do StrictMode.
+  useEffect(() => controle.iniciar(), [controle]);
 
-  const entrarComoVisitante = useCallback(async () => {
-    const nova: Sessao = {
-      modo: "visitante",
-      entradoEm: new Date().toISOString(),
-    };
-    setSessao(nova);
-
-    // Perder a sessão de visitante só faz a abertura aparecer de novo na
-    // próxima vez. Não vale bloquear quem só quer olhar.
-    try {
-      await gravarSessao(nova);
-    } catch (erro) {
-      console.warn("Não foi possível gravar a sessão de visitante.", erro);
-    }
-  }, []);
-
-  // Apaga do disco antes de limpar a memória: se só a memória fosse limpa e
-  // o disco falhasse, a pessoa "sairia" e voltaria logada na próxima abertura.
-  const sair = useCallback(async () => {
-    await apagarSessao();
-    setSessao(null);
-    await encerrarAutenticacao();
-  }, []);
-
-  const valor = useMemo<ContextoSessao>(
-    () => ({
+  const valor = useMemo<ContextoSessao>(() => {
+    const identificado = sessao?.modo === "identificado";
+    return {
       estado: sessao?.modo ?? "nenhuma",
-      email: sessao?.modo === "identificado" ? sessao.email : undefined,
-      nome: sessao?.modo === "identificado" ? sessao.nome : undefined,
+      email: identificado ? sessao.email : undefined,
+      nome: identificado ? sessao.nome : undefined,
+      usuarioId: identificado ? sessao.usuarioId : undefined,
       temSessao: sessao !== null,
-      entrar,
-      entrarComoVisitante,
-      sair,
-    }),
-    [sessao, entrar, entrarComoVisitante, sair],
-  );
+      entrar: controle.entrar,
+      entrarComoVisitante: controle.entrarComoVisitante,
+      sair: controle.sair,
+    };
+  }, [sessao, controle]);
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }

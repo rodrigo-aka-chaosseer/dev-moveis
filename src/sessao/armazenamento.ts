@@ -3,11 +3,11 @@
  * e-mail, modo (visitante ou identificado) e quando entrou. A senha nunca
  * passa por aqui.
  *
- * BACKEND: quando existir servidor, o token de acesso NÃO entra neste
- * arquivo. Ele vai para `expo-secure-store` (Keychain no iOS, Keystore no
- * Android), porque AsyncStorage é arquivo em texto no sandbox do app. Este
- * registro passa a ter `usuarioId`, a chave sobe para `raizes.sessao.v2`, e
- * `lerSessao` precisa continuar lendo a v1 para quem já tinha entrado.
+ * Com Supabase configurado, este registro é só um espelho da sessão do
+ * `supabase.auth`, que guarda o token por conta própria. Aqui fica apenas o
+ * `usuarioId` (o `user.id`), para as telas saberem de quem é a conta sem
+ * consultar o servidor. O campo é opcional: registros antigos, gravados antes
+ * dele, continuam válidos com a mesma chave.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -19,6 +19,8 @@ export type Sessao = {
   email?: string;
   /** Nome retornado pela autenticação; opcional para sessões v1 antigas. */
   nome?: string;
+  /** `user.id` do Supabase. Só existe para conta identificada com Supabase. */
+  usuarioId?: string;
   /** ISO 8601. */
   entradoEm: string;
 };
@@ -66,6 +68,13 @@ function ehSessaoValida(valor: unknown): valor is Sessao {
   return modoOk && dataOk && emailOk && nomeOk;
 }
 
+// Um id ruim não invalida a sessão inteira: ele só é descartado, e a
+// conferência com o Supabase na abertura grava o certo de novo.
+function lerUsuarioId(registro: Sessao): string | undefined {
+  const valor: unknown = registro.usuarioId;
+  return typeof valor === "string" && valor.length > 0 ? valor : undefined;
+}
+
 /**
  * Nunca lança: registro ausente, corrompido ou storage lento viram `null`,
  * e o app segue como primeira abertura.
@@ -98,6 +107,7 @@ export async function lerSessao(): Promise<Sessao | null> {
           modo: "identificado",
           email: registro.email,
           nome: registro.nome,
+          usuarioId: lerUsuarioId(registro),
           entradoEm: registro.entradoEm,
         }
       : { modo: "visitante", entradoEm: registro.entradoEm };
