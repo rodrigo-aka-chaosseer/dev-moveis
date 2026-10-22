@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { LocalLista } from "../mocks/locais";
 import type { CidadeId } from "../preferencias/dados";
@@ -8,11 +8,14 @@ const ERRO_LISTA = "Não foi possível carregar os lugares.";
 const ERRO_UM = "Não foi possível carregar este lugar.";
 
 export function useLocais(cidadeId: CidadeId | null) {
+  const [tentativa, setTentativa] = useState(0);
   const [pedido, setPedido] = useState<{
     cidadeId: CidadeId;
     locais: LocalLista[];
     erro: string | null;
   } | null>(null);
+
+  const recarregar = useCallback(() => { setPedido(null); setTentativa((valor) => valor + 1); }, []);
 
   useEffect(() => {
     if (!cidadeId) {
@@ -34,10 +37,10 @@ export function useLocais(cidadeId: CidadeId | null) {
     return () => {
       ativo = false;
     };
-  }, [cidadeId]);
+  }, [cidadeId, tentativa]);
 
   if (!cidadeId) {
-    return { locais: [], carregando: false, erro: null };
+    return { locais: [], carregando: false, erro: null, recarregar };
   }
 
   // Trocar de cidade não pode mostrar por um instante a lista da anterior.
@@ -45,6 +48,7 @@ export function useLocais(cidadeId: CidadeId | null) {
 
   return {
     locais: destaCidade ? pedido.locais : [],
+    recarregar,
     carregando: !destaCidade,
     erro: destaCidade ? pedido.erro : null,
   };
