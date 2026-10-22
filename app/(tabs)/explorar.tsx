@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { linhaResumo } from "../../src/locais/listarLocais";
 import { useLocais } from "../../src/locais/useLocais";
+import { ordenarPorProximidade } from "../../src/locais/proximidade";
+import { useLocalizacao } from "../../src/localizacao";
 import type { LocalLista } from "../../src/mocks/locais";
 import { usePreferencias } from "../../src/preferencias/PreferenciasProvider";
 import { CIDADES, INTERESSES, nomeCidade } from "../../src/preferencias/dados";
@@ -24,6 +27,11 @@ export default function Explorar() {
   const { cidadeId, interesses, pronto, erro: erroPreferencias, escolherCidade } =
     usePreferencias();
   const { locais, carregando, erro } = useLocais(cidadeId);
+  const { coordenadas } = useLocalizacao();
+  const locaisOrdenados = useMemo(
+    () => cidadeId ? ordenarPorProximidade(locais, cidadeId, coordenadas) : [],
+    [locais, cidadeId, coordenadas],
+  );
   const nomesInteresses = INTERESSES.filter((item) => interesses.includes(item.id)).map(
     (item) => item.nome,
   );
@@ -87,6 +95,14 @@ export default function Explorar() {
             Destaques culturais{nomeCidade(cidadeId) ? ` em ${nomeCidade(cidadeId)}` : ""}
           </Text>
 
+          {cidadeId ? (
+            <Text accessibilityLiveRegion="polite" style={styles.interesses}>
+              {coordenadas
+                ? "Distâncias em linha reta da sua localização, do mais próximo ao mais distante."
+                : `Localização indisponível. Distâncias aproximadas em linha reta a partir do centro de ${nomeCidade(cidadeId)}, do mais próximo ao mais distante.`}
+            </Text>
+          ) : null}
+
           {!cidadeId ? (
             <Text style={styles.vazio}>Escolha uma cidade para começar.</Text>
           ) : carregando ? (
@@ -98,7 +114,7 @@ export default function Explorar() {
               Ainda não temos lugares em {nomeCidade(cidadeId)}.
             </Text>
           ) : (
-            locais.map((local) => <CartaoLocal key={local.id} local={local} />)
+            locaisOrdenados.map((local) => <CartaoLocal key={local.id} local={local} />)
           )}
 
           {erroPreferencias ? (
