@@ -12,6 +12,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
+  SecaoAcessibilidade,
+  SecaoAmbienteSensorial,
+} from "../../src/components/local/SecoesAcessibilidade";
+import {
   rotuloCategoria,
   rotuloFonte,
   rotuloHorarios,
@@ -104,6 +108,9 @@ export default function DetalheLocal() {
               <Text style={styles.secaoTexto}>{local.avisoVisitacao}</Text>
             </View>
           ) : null}
+
+          <SecaoAcessibilidade acessibilidade={local.acessibilidade} />
+          <SecaoAmbienteSensorial ambiente={local.ambienteSensorial} />
 
           <View style={styles.secao}>
             <Text style={styles.secaoTitulo}>História</Text>
