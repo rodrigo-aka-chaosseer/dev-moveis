@@ -163,6 +163,15 @@ describe("buscarLocalPorId", () => {
     expect(local?.nome).toBe("Casa do Carnaval da Bahia");
   });
 
+  it("no mock, acessibilidade e ambiente aparecem como não informados", async () => {
+    const local = await buscarLocalPorId("casa-carnaval-bahia");
+
+    expect(Object.values(local!.acessibilidade).every((nivel) => nivel === "desconhecido")).toBe(
+      true,
+    );
+    expect(local?.ambienteSensorial).toBeNull();
+  });
+
   it("devolve null no mock quando o id não existe", async () => {
     await expect(buscarLocalPorId("nao-existe")).resolves.toBeNull();
   });
@@ -183,6 +192,66 @@ describe("buscarLocalPorId", () => {
       cidadeId: "salvador",
       tags: ["Afro-brasileira"],
     });
+  });
+
+  it("traz acessibilidade e ambiente sensorial junto com o lugar", async () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
+    const { from, builder } = consultaFalsa({
+      data: {
+        ...LINHA_SALVADOR,
+        acessibilidade: { rampa: "sim", elevador: "nao", libras: "parcial" },
+        ambiente_sensorial: {
+          ruido: "alto",
+          iluminacao: "media",
+          movimentacao: "alta",
+          tem_fila: true,
+          espaco_descanso: false,
+        },
+      },
+      error: null,
+    });
+    supabaseMock.cliente = { from };
+
+    const local = await buscarLocalPorId(LINHA_SALVADOR.id);
+
+    expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("acessibilidade(*)"));
+    expect(builder.select).toHaveBeenCalledWith(
+      expect.stringContaining("ambiente_sensorial(*)"),
+    );
+    expect(local?.acessibilidade).toMatchObject({
+      rampa: "sim",
+      elevador: "nao",
+      libras: "parcial",
+      braille: "desconhecido",
+    });
+    expect(local?.ambienteSensorial).toMatchObject({ ruido: "alto", temFila: true });
+  });
+
+  it("lugar sem linhas de acessibilidade e ambiente fica como não informado", async () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
+    const { from } = consultaFalsa({
+      data: { ...LINHA_SALVADOR, acessibilidade: null, ambiente_sensorial: null },
+      error: null,
+    });
+    supabaseMock.cliente = { from };
+
+    const local = await buscarLocalPorId(LINHA_SALVADOR.id);
+
+    expect(Object.values(local!.acessibilidade).every((nivel) => nivel === "desconhecido")).toBe(
+      true,
+    );
+    expect(local?.ambienteSensorial).toBeNull();
+  });
+
+  it("a lista não pede as tabelas do detalhe", async () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
+    const { from, builder } = consultaFalsa({ data: [], error: null });
+    supabaseMock.cliente = { from };
+
+    await listarLocais("salvador");
+
+    expect(builder.select).toHaveBeenCalledTimes(1);
+    expect(builder.select).not.toHaveBeenCalledWith(expect.stringContaining("acessibilidade"));
   });
 
   it("devolve null quando o lugar não existe ou está arquivado", async () => {

@@ -54,6 +54,18 @@ Supabase, com Postgres. Esquema completo em `docs/banco/esquema.sql` e
 migrar `src/db/schema.ts` de SQLite pra Postgres e ligar a primeira tela a
 dado real — quatro tasks da semana, uma por integrante.
 
+## Acessibilidade e ambiente sensorial (RAÍZES-24, feita)
+
+O detalhe do lugar mostra acessibilidade (rampa, elevador, banheiro
+acessível, Libras, Braille, audiodescrição) e ambiente sensorial (ruído,
+iluminação, movimento, fila, espaço de descanso), lidos de `acessibilidade`
+e `ambiente_sensorial`. Lugar sem informação aparece como "não informado",
+nunca como "não disponível". Regras em `src/locais/acessibilidade.ts`.
+
+Os 8 lugares curados de `src/mocks/locais.ts` estão todos como "não
+informado": acessibilidade de lugar real só entra com fonte, igual ao resto
+da curadoria. Levantar esses dados é trabalho editorial pendente.
+
 ## Risco principal
 
 O diferencial do app é conteúdo curado, não código. Cada lugar precisa de

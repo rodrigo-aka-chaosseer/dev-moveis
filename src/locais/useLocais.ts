@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { LocalLista } from "../mocks/locais";
 import type { CidadeId } from "../preferencias/dados";
-import { buscarLocalPorId, listarLocais } from "./listarLocais";
+import { buscarLocalPorId, listarLocais, type LocalDetalhe } from "./listarLocais";
 
 const ERRO_LISTA = "Não foi possível carregar os lugares.";
 const ERRO_UM = "Não foi possível carregar este lugar.";
@@ -57,7 +57,7 @@ export function useLocais(cidadeId: CidadeId | null) {
 export function useLocal(id: string | undefined) {
   const [pedido, setPedido] = useState<{
     id: string;
-    local: LocalLista | null;
+    local: LocalDetalhe | null;
     erro: string | null;
   } | null>(null);
 
