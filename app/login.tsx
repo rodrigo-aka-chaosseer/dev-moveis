@@ -252,7 +252,7 @@ export default function Login() {
         return;
       }
 
-      await entrar(resultado.email, resultado.nome);
+      await entrar(resultado.email, resultado.nome, resultado.usuarioId);
 
       // Sucesso visível antes de navegar: o check cresce, o aparelho confirma.
       setSucesso(true);

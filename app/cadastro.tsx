@@ -82,7 +82,7 @@ export default function Cadastro() {
     }
 
     try {
-      await entrar(resultado.email, resultado.nome);
+      await entrar(resultado.email, resultado.nome, resultado.usuarioId);
       router.replace("/onboarding");
     } catch {
       setErroGeral("A conta foi criada, mas não foi possível iniciar a sessão.");
