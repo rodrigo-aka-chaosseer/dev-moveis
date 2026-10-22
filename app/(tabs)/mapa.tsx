@@ -82,7 +82,7 @@ export default function Mapa() {
                       </Pressable>
                       {aberto ? <View accessibilityLiveRegion="polite" style={styles.resumo}>
                         <Text style={styles.texto}>{local.porQueConhecer}</Text>
-                        <Pressable accessibilityRole="button" style={styles.botao} onPress={() => router.push(`/roteiro/${local.id}` as Href)}>
+                        <Pressable accessibilityRole="button" style={styles.botao} onPress={() => router.push(`/local/${local.id}` as Href)}>
                           <Text style={styles.link}>Ver detalhes de {local.nome}</Text>
                         </Pressable>
                       </View> : null}

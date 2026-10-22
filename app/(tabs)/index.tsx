@@ -13,8 +13,8 @@ import { colors, fonts } from "../../src/theme/tokens";
 
 export default function Inicio() {
   const router = useRouter();
-  const { nome } = useSessao();
-  const { cidadeId, escolherCidade, interesses, pronto, erro: erroPreferencias } = usePreferencias();
+  const { nome, estado } = useSessao();
+  const { cidadeId, escolherCidade, interesses, onboardingConcluido, pronto, erro: erroPreferencias } = usePreferencias();
   const { locais, carregando, erro, recarregar } = useLocais(cidadeId);
   const { coordenadas } = useLocalizacao();
   const ordenados = useMemo(() => cidadeId ? ordenarPorProximidade(locais, cidadeId, coordenadas) : [], [locais, cidadeId, coordenadas]);
@@ -24,6 +24,7 @@ export default function Inicio() {
     <View style={s.topo}><Text style={s.marca}>Raízes</Text><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" onPress={() => router.push("/(tabs)/perfil")} style={s.avatar}><Ionicons name="person-outline" size={21} color={colors.earth} /></Pressable></View>
     <View style={{ gap: 7 }}><Text style={v.legenda}>OLÁ{nome ? `, ${nome.split(" ")[0].toUpperCase()}` : ""}. A CIDADE ESPERA POR VOCÊ.</Text><Text style={s.titulo}>Qual vai ser a sua{"\n"}próxima descoberta?</Text></View>
     <View style={v.etiquetas}>{CIDADES.map((cidade) => <Pressable key={cidade.id} accessibilityRole="button" accessibilityState={{ selected: cidadeId === cidade.id }} onPress={() => escolherCidade(cidade.id)} style={[s.cidade, cidadeId === cidade.id && s.cidadeAtiva]}><Ionicons name="location-outline" size={15} color={cidadeId === cidade.id ? colors.onDark : colors.earth} /><Text style={[v.etiquetaTexto, cidadeId === cidade.id && { color: colors.onDark }]}>{cidade.nome}</Text></Pressable>)}</View>
+    {estado === "visitante" ? <View style={s.convite}><Ionicons name="person-outline" size={24} color={colors.accentDark} /><View style={{ flex: 1, gap: 5 }}><Text style={v.secaoTitulo}>Explorando como visitante</Text><Text style={v.descricao}>A sessão de visitante termina à meia-noite. Crie uma conta para guardar suas escolhas.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Criar conta ou entrar" style={s.avatar} onPress={() => router.push("/login")}><Ionicons name="arrow-forward" size={20} color={colors.accentDark} /></Pressable></View> : null}
     <Pressable accessibilityRole="button" accessibilityLabel="Buscar lugares no Explorar" onPress={() => router.push("/(tabs)/explorar")} style={s.busca}><Ionicons name="search-outline" size={21} color={colors.textMuted} /><Text style={[v.descricao, { flex: 1 }]}>Um museu, uma história, um novo lugar…</Text><Ionicons name="arrow-forward" size={19} color={colors.accentDark} /></Pressable>
     <View style={s.atalhos}>{([
       ["compass-outline", "Explorar", "/(tabs)/explorar"], ["map-outline", "No mapa", "/(tabs)/mapa"], ["trail-sign-outline", "Roteiros", "/(tabs)/roteiros"],
@@ -31,7 +32,7 @@ export default function Inicio() {
     <Secao titulo={afinidades.length ? "Escolhidos para seu olhar" : "Lugares que contam histórias"} acao="Ver todos" onPress={() => router.push("/(tabs)/explorar")} />
     {!pronto || carregando ? <Estado titulo="Preparando suas descobertas…" carregando /> : erro ? <><Estado titulo="Não conseguimos carregar" descricao={erro} /><Botao texto="Tentar novamente" onPress={recarregar} secundario /></> : !cidadeId ? <><Estado titulo="Escolha por onde começar" descricao="Selecione Salvador ou Recife acima para descobrir os lugares da cidade." /><Botao texto="Personalizar meus interesses" onPress={() => router.push("/onboarding")} secundario /></> : !locais.length ? <Estado titulo="Mais histórias em breve" descricao="Ainda não temos lugares nesta cidade. Experimente outro destino." /> : destaques.slice(0, 3).map((local) => <CartaoLugar key={local.id} local={local} />)}
     {coordenadas && ordenados.length ? <><Secao titulo="Pertinho de você" /><CartaoLugar local={ordenados[0]} /></> : null}
-    <View style={s.convite}><Ionicons name="sparkles-outline" size={24} color={colors.accentDark} /><View style={{ flex: 1, gap: 5 }}><Text style={v.secaoTitulo}>Mais a sua cara</Text><Text style={v.descricao}>Conte o que você gosta de conhecer.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Escolher interesses" style={s.avatar} onPress={() => router.push("/onboarding")}><Ionicons name="arrow-forward" size={20} color={colors.accentDark} /></Pressable></View>
+    {pronto && !onboardingConcluido ? <View style={s.convite}><Ionicons name="sparkles-outline" size={24} color={colors.accentDark} /><View style={{ flex: 1, gap: 5 }}><Text style={v.secaoTitulo}>{interesses.length ? "Termine suas preferências" : "Mais a sua cara"}</Text><Text style={v.descricao}>{interesses.length ? "Falta confirmar a cidade no primeiro acesso." : "Conte o que você gosta de conhecer."}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={interesses.length ? "Terminar preferências" : "Escolher interesses"} style={s.avatar} onPress={() => router.push("/onboarding")}><Ionicons name="arrow-forward" size={20} color={colors.accentDark} /></Pressable></View> : null}
     {erroPreferencias ? <Text style={v.erro}>{erroPreferencias}</Text> : null}
   </Tela>;
 }
