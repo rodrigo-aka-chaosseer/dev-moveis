@@ -19,6 +19,7 @@ vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ t
 vi.mock("../preferencias/PreferenciasProvider", () => ({ usePreferencias: () => mocks.preferencias }));
 vi.mock("../locais/useLocais", () => ({ useLocais: () => mocks.locais }));
 vi.mock("../localizacao", () => ({ useLocalizacao: () => mocks.localizacao }));
+vi.mock("../components/visual/Guia", () => ({ Capa: "Capa" }));
 vi.mock("./MapaLugares", () => ({ default: "MapaLugares" }));
 vi.mock("../lib/supabase", () => ({ supabase: null }));
 
@@ -57,6 +58,15 @@ describe("aba Mapa", () => {
     expect(mocks.push).toHaveBeenCalledWith(`/roteiro/${local.id}`);
   });
 
+  it("abre a explicação dentro do cartão tocado e recolhe ao tocar novamente", async () => {
+    await montar();
+    const local = locais[0];
+    const cartao = tela.root.findAllByType(tipo("Pressable")).find((item) => item.props.accessibilityLabel === `Ver resumo de ${local.nome}`)!;
+    await act(async () => { cartao.props.onPress(); });
+    expect(cartao.parent?.findAllByType(tipo("Text")).some((item) => item.props.children === local.porQueConhecer)).toBe(true);
+    await act(async () => { cartao.props.onPress(); });
+    expect(tela.root.findAllByType(tipo("Text")).some((item) => item.props.children === local.porQueConhecer)).toBe(false);
+  });
   it("remove resumo da cidade anterior ao trocar a cidade", async () => {
     await montar();
     await act(async () => tela.root.findByType(tipo("MapaLugares")).props.selecionar(locais[0].id));

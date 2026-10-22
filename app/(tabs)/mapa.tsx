@@ -1,3 +1,4 @@
+import { Capa } from "../../src/components/visual/Guia";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
@@ -68,23 +69,25 @@ export default function Mapa() {
                   <MapaLugares cidadeId={cidadeId} locais={locais} coordenadas={coordenadas}
                     selecionadoId={selecionado?.id ?? null} selecionar={selecionar} />
                   {locais.length === 0 ? <Text style={styles.aviso}>Ainda não temos lugares em {nomeCidade(cidadeId)}.</Text> : null}
-                  {selecionado ? (
-                    <View accessibilityLiveRegion="polite" style={styles.resumo}>
-                      <Text accessibilityRole="header" style={styles.nome}>{selecionado.nome}</Text>
-                      <Text style={styles.texto}>{linhaResumo(selecionado)}</Text>
-                      <Text style={styles.texto}>{selecionado.porQueConhecer}</Text>
-                      <Pressable accessibilityRole="button" style={styles.botao} onPress={() => router.push(`/roteiro/${selecionado.id}` as Href)}>
-                        <Text style={styles.link}>Ver detalhes de {selecionado.nome}</Text>
-                      </Pressable>
-                    </View>
-                  ) : null}
                   {ordenados.length ? <Text style={styles.subtitulo}>Lugares em {nomeCidade(cidadeId)}</Text> : null}
-                  {ordenados.map((local) => (
-                    <Pressable key={local.id} accessibilityRole="button" accessibilityLabel={`Ver resumo de ${local.nome}`}
-                      accessibilityState={{ selected: selecionadoId === local.id }} style={styles.item} onPress={() => selecionar(local.id)}>
-                      <Text style={styles.nome}>{local.nome}</Text><Text style={styles.texto}>{linhaResumo(local)}</Text>
-                    </Pressable>
-                  ))}
+                  {ordenados.map((local) => {
+                    const aberto = selecionado?.id === local.id;
+                    return <View key={local.id} style={styles.item}>
+                      <Pressable accessibilityRole="button" accessibilityLabel={`Ver resumo de ${local.nome}`}
+                        accessibilityState={{ expanded: aberto, selected: aberto }}
+                        onPress={() => selecionar(aberto ? null : local.id)}>
+                        <View style={{ borderRadius: 16, overflow: "hidden", marginBottom: 12 }}><Capa local={local} /></View>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><Text style={[styles.nome, { flex: 1 }]}>{local.nome}</Text><Text style={styles.link}>{aberto ? "−" : "+"}</Text></View>
+                        <Text style={styles.texto}>{linhaResumo(local)}</Text>
+                      </Pressable>
+                      {aberto ? <View accessibilityLiveRegion="polite" style={styles.resumo}>
+                        <Text style={styles.texto}>{local.porQueConhecer}</Text>
+                        <Pressable accessibilityRole="button" style={styles.botao} onPress={() => router.push(`/roteiro/${local.id}` as Href)}>
+                          <Text style={styles.link}>Ver detalhes de {local.nome}</Text>
+                        </Pressable>
+                      </View> : null}
+                    </View>;
+                  })}
                 </>}
         </>
       )}
@@ -93,10 +96,10 @@ export default function Mapa() {
 }
 
 const styles = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: colors.surface },
-  titulo: { fontFamily: fonts.semibold, fontSize: 24, color: colors.text, marginHorizontal: spacing.pageX, marginBottom: 16 },
+  tela: { flex: 1, backgroundColor: colors.surface2 },
+  titulo: { fontFamily: fonts.semibold, fontSize: 32, letterSpacing: -1, color: colors.text, marginHorizontal: spacing.pageX, marginBottom: 16 },
   cidades: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: spacing.pageX },
-  cidade: { padding: 12, minHeight: MIN_TOUCH, borderRadius: 10, backgroundColor: colors.surface2 },
+  cidade: { padding: 12, minHeight: MIN_TOUCH, borderRadius: 22, backgroundColor: colors.surface },
   ativa: { backgroundColor: colors.accentTint },
   aviso: { marginHorizontal: spacing.pageX, marginVertical: 12, color: colors.textMuted },
   erro: { marginHorizontal: spacing.pageX, marginVertical: 12, color: colors.error },
@@ -104,7 +107,7 @@ const styles = StyleSheet.create({
   link: { color: colors.accentDark, fontFamily: fonts.semibold },
   texto: { color: colors.text, lineHeight: 22 },
   nome: { color: colors.text, fontFamily: fonts.semibold, fontSize: 16 },
-  resumo: { margin: spacing.pageX, padding: 16, gap: 8, borderRadius: 14, backgroundColor: colors.accentSoft },
+  resumo: { marginTop: 12, padding: 16, gap: 8, borderRadius: 24, backgroundColor: colors.paper },
   subtitulo: { marginHorizontal: spacing.pageX, marginTop: 16, color: colors.text, fontFamily: fonts.semibold },
-  item: { marginHorizontal: spacing.pageX, paddingVertical: 16, minHeight: MIN_TOUCH, borderBottomWidth: 1, borderBottomColor: colors.surface3, gap: 4 },
+  item: { marginHorizontal: spacing.pageX, paddingVertical: 16, minHeight: MIN_TOUCH, borderRadius: 20, backgroundColor: colors.surface, paddingHorizontal: 18, marginTop: 10, gap: 6 },
 });

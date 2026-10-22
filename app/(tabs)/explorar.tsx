@@ -1,300 +1,34 @@
-import { useMemo } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { Image } from "expo-image";
-import { StatusBar } from "expo-status-bar";
-import { useRouter, type Href } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { linhaResumo } from "../../src/locais/listarLocais";
+import { useMemo, useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { Tela, Cabecalho, CartaoLugar, Estado, v } from "../../src/components/visual/Guia";
 import { useLocais } from "../../src/locais/useLocais";
 import { ordenarPorProximidade } from "../../src/locais/proximidade";
 import { useLocalizacao } from "../../src/localizacao";
-import type { LocalLista } from "../../src/mocks/locais";
 import { usePreferencias } from "../../src/preferencias/PreferenciasProvider";
 import { CIDADES, INTERESSES, nomeCidade } from "../../src/preferencias/dados";
-import { colors, fonts, MIN_TOUCH, radius, spacing } from "../../src/theme/tokens";
+import { colors, fonts } from "../../src/theme/tokens";
 
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 export default function Explorar() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { cidadeId, interesses, pronto, erro: erroPreferencias, escolherCidade } =
-    usePreferencias();
-  const { locais, carregando, erro } = useLocais(cidadeId);
+  const { cidadeId, escolherCidade, pronto, erro: erroPreferencias } = usePreferencias();
+  const { locais, carregando, erro, recarregar } = useLocais(cidadeId);
   const { coordenadas } = useLocalizacao();
-  const locaisOrdenados = useMemo(
-    () => cidadeId ? ordenarPorProximidade(locais, cidadeId, coordenadas) : [],
-    [locais, cidadeId, coordenadas],
-  );
-  const nomesInteresses = INTERESSES.filter((item) => interesses.includes(item.id)).map(
-    (item) => item.nome,
-  );
-
-  return (
-    <View style={styles.tela}>
-      <StatusBar style="dark" />
-      <View style={[styles.topo, { paddingTop: Math.max(insets.top, 16) }]}>
-        <Text style={styles.titulo}>Explorar</Text>
-      </View>
-
-      {!pronto ? (
-        <View style={styles.estado}>
-          <ActivityIndicator color={colors.accent} />
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={[
-            styles.lista,
-            { paddingBottom: 24 + insets.bottom },
-          ]}
-        >
-          <Text style={styles.secao}>Cidade de destino</Text>
-          <View style={styles.cidades}>
-            {CIDADES.map((cidade) => {
-              const selecionada = cidadeId === cidade.id;
-              return (
-                <Pressable
-                  key={cidade.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${cidade.nome}, ${cidade.uf}`}
-                  accessibilityState={{ selected: selecionada }}
-                  onPress={() => escolherCidade(cidade.id)}
-                  style={[styles.cidade, selecionada && styles.cidadeAtiva]}
-                >
-                  <Text style={[styles.cidadeTexto, selecionada && styles.cidadeTextoAtivo]}>
-                    {cidade.nome}, {cidade.uf}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View style={styles.interessesTopo}>
-            <Text style={styles.secao}>Seus interesses</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push("/onboarding")}
-              style={styles.editar}
-            >
-              <Text style={styles.editarTexto}>Editar escolhas</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.interesses}>
-            {nomesInteresses.length
-              ? nomesInteresses.join(" · ")
-              : "Nenhum interesse selecionado ainda."}
-          </Text>
-
-          <Text style={styles.secao}>
-            Destaques culturais{nomeCidade(cidadeId) ? ` em ${nomeCidade(cidadeId)}` : ""}
-          </Text>
-
-          {cidadeId ? (
-            <Text accessibilityLiveRegion="polite" style={styles.interesses}>
-              {coordenadas
-                ? "Distâncias em linha reta da sua localização, do mais próximo ao mais distante."
-                : `Localização indisponível. Distâncias aproximadas em linha reta a partir do centro de ${nomeCidade(cidadeId)}, do mais próximo ao mais distante.`}
-            </Text>
-          ) : null}
-
-          {!cidadeId ? (
-            <Text style={styles.vazio}>Escolha uma cidade para começar.</Text>
-          ) : carregando ? (
-            <ActivityIndicator color={colors.accent} />
-          ) : erro ? (
-            <Text style={styles.erro}>{erro}</Text>
-          ) : locais.length === 0 ? (
-            <Text style={styles.vazio}>
-              Ainda não temos lugares em {nomeCidade(cidadeId)}.
-            </Text>
-          ) : (
-            locaisOrdenados.map((local) => <CartaoLocal key={local.id} local={local} />)
-          )}
-
-          {erroPreferencias ? (
-            <Text accessibilityLiveRegion="polite" style={styles.erro}>
-              {erroPreferencias}
-            </Text>
-          ) : null}
-        </ScrollView>
-      )}
-    </View>
-  );
+  const [busca, setBusca] = useState("");
+  const [categoria, setCategoria] = useState<string | null>(null);
+  const ordenados = useMemo(() => cidadeId ? ordenarPorProximidade(locais, cidadeId, coordenadas) : [], [locais, cidadeId, coordenadas]);
+  const filtrados = ordenados.filter((local) => (!categoria || local.categoria === categoria || (categoria === "eventos" && local.categoria === "evento")) && normalizar(`${local.nome} ${local.tags.join(" ")} ${local.categoria}`).includes(normalizar(busca.trim())));
+  return <Tela>
+    <Cabecalho legenda="SIGA SUA CURIOSIDADE" titulo="Encontre seu próximo lugar." descricao="Cultura, encontros e histórias pelo caminho." />
+    <View style={v.etiquetas}>{CIDADES.map((cidade) => <Pressable key={cidade.id} accessibilityRole="button" accessibilityState={{ selected: cidadeId === cidade.id }} onPress={() => escolherCidade(cidade.id)} style={[v.etiqueta, cidadeId === cidade.id && v.etiquetaAtiva]}><Text style={[v.etiquetaTexto, cidadeId === cidade.id && { color: colors.onDark }]}>{cidade.nome}, {cidade.uf}</Text></Pressable>)}</View>
+    <View style={s.busca}><Ionicons name="search-outline" size={21} color={colors.textMuted} /><TextInput accessibilityLabel="Buscar lugares" placeholder="Busque um lugar ou uma história" placeholderTextColor={colors.textMuted} value={busca} onChangeText={setBusca} style={s.entrada} />{busca ? <Pressable accessibilityRole="button" accessibilityLabel="Limpar busca" onPress={() => setBusca("")} style={s.limpar}><Ionicons name="close" size={20} color={colors.textMuted} /></Pressable> : null}</View>
+    <View style={v.etiquetas}><Pressable accessibilityRole="button" accessibilityState={{ selected: !categoria }} onPress={() => setCategoria(null)} style={[v.etiqueta, !categoria && { backgroundColor: colors.accentTint }]}><Text style={v.etiquetaTexto}>Tudo</Text></Pressable>{INTERESSES.map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: categoria === item.id }} onPress={() => setCategoria(categoria === item.id ? null : item.id)} style={[v.etiqueta, categoria === item.id && { backgroundColor: colors.accentTint }]}><Text style={v.etiquetaTexto}>{item.icone}  {item.nome}</Text></Pressable>)}</View>
+    <View style={v.secao}><Text style={v.secaoTitulo}>{cidadeId ? `Descubra ${nomeCidade(cidadeId)?.split(",")[0]}` : "Por onde vamos?"}</Text><Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/mapa")} style={v.linkToque}><Text style={v.link}>Ver no mapa ↗</Text></Pressable></View>
+    {cidadeId ? <Text style={v.descricao}>{coordenadas ? "Mais perto de você · distâncias em linha reta" : "Distâncias aproximadas pelo centro da cidade"}</Text> : null}
+    {!pronto || carregando ? <Estado titulo="Encontrando lugares…" carregando /> : erro ? <><Estado titulo="Não conseguimos carregar" descricao={erro} icone="cloud-offline-outline" /><Pressable accessibilityRole="button" onPress={recarregar} style={v.botao}><Text style={v.botaoTexto}>Tentar novamente</Text></Pressable></> : !cidadeId ? <Estado titulo="Escolha uma cidade" descricao="Selecione seu destino acima e comece a explorar." /> : !locais.length ? <Estado titulo="Novas histórias estão a caminho" descricao={`Ainda não temos lugares em ${nomeCidade(cidadeId)}.`} /> : !filtrados.length ? <Estado titulo="Nenhum lugar por aqui" descricao="Experimente outro termo ou outra categoria." icone="search-outline" /> : filtrados.map((local) => <CartaoLugar key={local.id} local={local} />)}
+    {erroPreferencias ? <Text accessibilityRole="alert" style={v.erro}>{erroPreferencias}</Text> : null}
+  </Tela>;
 }
-
-function CartaoLocal({ local }: { local: LocalLista }) {
-  const router = useRouter();
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={local.nome}
-      onPress={() => router.push(`/roteiro/${local.id}` as Href)}
-      style={({ pressed }) => [styles.item, pressed && styles.itemPressionado]}
-    >
-      <Image
-        source={{ uri: local.imagemUrl ?? undefined }}
-        style={styles.foto}
-        contentFit="cover"
-      />
-      <View style={styles.itemTexto}>
-        <Text style={styles.itemTitulo}>{local.nome}</Text>
-        <Text style={styles.itemResumo}>{linhaResumo(local)}</Text>
-        <View style={styles.tags}>
-          {local.tags.map((tag) => (
-            <Text key={tag} style={styles.tag}>
-              {tag}
-            </Text>
-          ))}
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
-  tela: {
-    flex: 1,
-    backgroundColor: colors.surface,
-  },
-  topo: {
-    paddingHorizontal: spacing.pageX,
-    paddingBottom: spacing.stackLg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface3,
-    backgroundColor: colors.surface,
-  },
-  titulo: {
-    fontFamily: fonts.extrabold,
-    fontSize: 22,
-    color: colors.text,
-  },
-  secao: {
-    fontFamily: fonts.extrabold,
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 10,
-  },
-  lista: {
-    paddingHorizontal: spacing.pageX,
-    paddingTop: 16,
-    gap: 16,
-  },
-  cidades: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 9,
-  },
-  cidade: {
-    minHeight: MIN_TOUCH,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    borderWidth: 1.5,
-    borderColor: colors.surface3,
-    borderRadius: radius.button,
-    backgroundColor: colors.surface2,
-  },
-  cidadeAtiva: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accentSoft,
-  },
-  cidadeTexto: {
-    fontFamily: fonts.semibold,
-    fontSize: 13,
-    color: colors.text,
-  },
-  cidadeTextoAtivo: {
-    color: colors.accentDark,
-  },
-  interessesTopo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  editar: {
-    minHeight: MIN_TOUCH,
-    justifyContent: "center",
-  },
-  editarTexto: {
-    fontFamily: fonts.semibold,
-    fontSize: 13,
-    color: colors.accentDark,
-  },
-  interesses: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 21,
-    color: colors.textMuted,
-    marginTop: -8,
-  },
-  item: {
-    flexDirection: "row",
-    gap: 14,
-    minHeight: MIN_TOUCH,
-  },
-  itemPressionado: {
-    opacity: 0.7,
-  },
-  foto: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface3,
-  },
-  itemTexto: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  itemTitulo: {
-    fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  itemResumo: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-    marginBottom: 6,
-  },
-  tags: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  tag: {
-    backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.surface3,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    fontFamily: fonts.semibold,
-    fontSize: 10,
-    color: colors.textMuted,
-    overflow: "hidden",
-  },
-  estado: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.pageX,
-  },
-  erro: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.error,
-    textAlign: "center",
-  },
-  vazio: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-});
+const s = StyleSheet.create({ busca: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surface, borderRadius: 18, paddingHorizontal: 16, minHeight: 56, gap: 10 }, entrada: { flex: 1, minWidth: 0, minHeight: 56, fontFamily: fonts.regular, fontSize: 13, color: colors.text }, limpar: { minHeight: 44, minWidth: 32, justifyContent: "center", alignItems: "center" } });

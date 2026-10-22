@@ -1,0 +1,10 @@
+export const fotosLocais: Record<string, { source: number; autor: string; licenca: string; pagina: string }> = {
+  "casa-carnaval-bahia": { source: require("../../assets/images/locais/casa-carnaval-bahia.jpg"), autor: "Ajmcbarreto", licenca: "CC BY-SA 4.0", pagina: "https://commons.wikimedia.org/wiki/File:IMG_Casa_do_Carnaval_de_Salvador_-_01.jpg" },
+  "casa-rio-vermelho": { source: require("../../assets/images/locais/casa-rio-vermelho.jpg"), autor: "Paul R. Burley", licenca: "CC BY-SA 4.0", pagina: "https://commons.wikimedia.org/wiki/File:Casa_do_Rio_Vermelho_Salvador_Bahia_2017-1002.jpg" },
+  "casa-benin": { source: require("../../assets/images/locais/casa-benin.jpg"), autor: "Paul R. Burley", licenca: "CC BY-SA 4.0", pagina: "https://commons.wikimedia.org/wiki/File:Casa_do_Benin_Salvador_Bahia_2018-0776.jpg" },
+  "mafro-ufba": { source: require("../../assets/images/locais/mafro-ufba.jpg"), autor: "Sailko", licenca: "CC BY-SA 4.0", pagina: "https://commons.wikimedia.org/wiki/File:Salvador,_museo_afro-brasileiro,_sala_01.JPG" },
+  "igreja-rosario-pretos": { source: require("../../assets/images/locais/igreja-rosario-pretos.jpg"), autor: "Paul R. Burley", licenca: "CC BY-SA 4.0", pagina: "https://commons.wikimedia.org/wiki/File:Igreja_de_Nossa_Senhora_do_Ros%C3%A1rio_dos_Pretos_Salvador_2018-0767.jpg" },
+  "paco-frevo": { source: require("../../assets/images/locais/paco-frevo.jpg"), autor: "Boaventuravinicius", licenca: "CC BY-SA 3.0", pagina: "https://commons.wikimedia.org/wiki/File:Pa%C3%A7o_do_Frevo_2026.jpg" },
+  "cais-sertao": { source: require("../../assets/images/locais/cais-sertao.jpg"), autor: "Luci Correia", licenca: "CC BY 2.0", pagina: "https://commons.wikimedia.org/wiki/File:Museu_Cais_do_Sert%C3%A3o,_Recife.jpg" },
+  "casa-cultura-pernambuco": { source: require("../../assets/images/locais/casa-cultura-pernambuco.jpg"), autor: "chivunck", licenca: "CC BY-SA 3.0", pagina: "https://commons.wikimedia.org/wiki/File:Casa_da_Cultura_-_Recife,_Pernambuco,_Brasil.jpg" },
+};
