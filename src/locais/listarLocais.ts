@@ -1,3 +1,4 @@
+import { distanciaKm, formatarDistancia } from "./distancia";
 import { supabase } from "../lib/supabase";
 import { locais, type LocalLista } from "../mocks/locais";
 import { CIDADES, type CidadeId } from "../preferencias/dados";
@@ -181,23 +182,6 @@ function cidadeMaisProxima(latitude: number, longitude: number) {
     }
   }
   return melhor;
-}
-
-function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const radianos = Math.PI / 180;
-  const dLat = (lat2 - lat1) * radianos;
-  const dLon = (lon2 - lon1) * radianos;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * radianos) * Math.cos(lat2 * radianos) * Math.sin(dLon / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function formatarDistancia(km: number): string {
-  if (km < 1) {
-    return `${Math.round(km * 1000)} m`;
-  }
-  return `${km.toFixed(1).replace(".", ",")} km`;
 }
 
 export function rotuloCategoria(categoria: LocalLista["categoria"]) {
