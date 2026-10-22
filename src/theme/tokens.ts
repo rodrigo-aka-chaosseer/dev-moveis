@@ -4,6 +4,7 @@
  */
 export const colors = {
   accent: "#d4622a",
+  userLocation: "#2563eb",
   accentDark: "#9a3412",
   earth: "#5c3d2e",
   bg: "#12100e",
