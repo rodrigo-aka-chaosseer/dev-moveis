@@ -271,3 +271,41 @@ favoritos de alguém, como item quebrado) fica como está — de propósito.**
 Não é falha de banco: é decisão de produto ainda não tomada, entre esconder
 o favorito quebrado da lista ou mostrar algo como "lugar indisponível". A
 tela de favoritos (ainda não construída) é quem resolve isso quando existir.
+
+---
+
+## 10. IA monta roteiro só com conteúdo curado, e resposta duvidosa é rejeitada
+
+Data: 28/10/2026
+
+O roteiro gerado (RAÍZES-26, issue #49) usa a Claude API, mas a IA não é
+fonte de conteúdo: ela só escolhe, ordena e justifica lugares que já estão
+publicados no nosso catálogo. O que separa o Raízes de um app genérico é o
+contexto curado (decisão 3), e um modelo inventando um terreiro ou uma
+história que não existe é exatamente o erro que não dá pra ter.
+
+Como isso fica garantido:
+
+- **Chave só no servidor.** A chamada acontece numa Supabase Edge Function
+  (`gerar-roteiro`), com a chave no secret `ANTHROPIC_API_KEY`. Variável
+  `EXPO_PUBLIC_*` vai dentro do app e qualquer um extrai; por isso a chave
+  nunca passa por ela.
+- **O texto vem do banco, não do app.** O app manda só ids; a função relê os
+  lugares publicados com o token da pessoa (nunca `service_role`). Do que o
+  app manda, só slugs de interesse, números e opções fechadas chegam ao
+  prompt — não existe campo de texto livre que vire instrução.
+- **Resposta inválida é rejeitada, não consertada.** Id fora da lista ou
+  repetido, texto vazio, JSON cortado ou recusa: a pessoa recebe um erro
+  amigável e tenta de novo. Consertar em silêncio (tirar o id inventado e
+  seguir) entregaria o resto de uma resposta em que o modelo já mostrou que
+  não seguiu a regra. Só o que é regra do app é ajustado: ordem renumerada,
+  duração dentro de limites e corte das últimas paradas que passam do tempo
+  ou do orçamento.
+- **Acessibilidade não é gravada nem logada.** As necessidades da pessoa
+  (dado sensível, decisão 5) servem só para filtrar os candidatos naquele
+  pedido. Não vão para o modelo, não ficam em tabela e não aparecem no log,
+  que guarda só tipo de erro, status, duração e contagens.
+
+Risco aceito: qualquer conta logada pode gerar quantos roteiros quiser, e
+cada um custa alguns centavos de dólar (estimativa em `docs/IA.md`). O
+limite diário por pessoa fica para quando o uso real aparecer.
