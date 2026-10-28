@@ -18,6 +18,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
 - [x] RAÍZES-14 — primeiro lote com 8 lugares curados de Salvador e Recife
 - [x] RAÍZES-19 — sessão do app unificada com o Supabase Auth (Josias, #35)
+- [x] RAÍZES-25 — preferências sincronizadas com o Supabase (Josias, #48)
 
 ## Pendências que nasceram do login (decisão 4)
 
@@ -80,6 +81,19 @@ local e depois encerra no Supabase, sem o app entrar de novo sozinho.
 Visitante continua só local. As regras moram em
 `src/sessao/controleSessao.ts`.
 
-Com o `usuarioId` disponível, o upsert em `preferencias` protegido por RLS já
-pode ser feito. Ligá-lo à tela continua sendo escopo da RAÍZES-22: hoje o
-perfil só lê as preferências locais e não existe ponto de gravação pendente.
+Desde a RAÍZES-25, as preferências de conta identificada sincronizam com a
+tabela `preferencias` (RLS: só o dono lê e escreve). Ao entrar, o app busca a
+linha da conta: se lá o onboarding está concluído, os interesses do servidor
+substituem os locais; se não há linha (ou não está concluída), as locais
+sobem. Depois disso, cada mudança de interesse e a conclusão do onboarding
+fazem upsert por `usuario_id`. Sobem só `interesses` e `onboarding_concluido`;
+temas e necessidades de acessibilidade vão vazios (dado sensível, decisão 6,
+não é coletado).
+
+Continua só no aparelho: a cidade (a tabela não tem coluna para ela). Por
+isso, num aparelho novo sem cidade, os interesses chegam do servidor, mas o
+onboarding local só conclui quando a pessoa escolhe a cidade. A sincronização
+é melhor esforço: sem rede, a escolha local fica e a próxima mudança tenta de
+novo. Visitante e modo mock (sem `.env`) continuam 100% locais, e sair da
+conta não apaga as preferências do aparelho. As regras moram em
+`src/preferencias/sincronizar.ts`.
