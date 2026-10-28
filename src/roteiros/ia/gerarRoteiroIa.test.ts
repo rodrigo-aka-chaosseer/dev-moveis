@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ERRO_CONEXAO,
   ERRO_GENERICO,
+  ERRO_LOGIN,
   ERRO_SEM_SUPABASE,
   gerarRoteiroIa,
   type PedidoRoteiroIa,
@@ -93,6 +94,13 @@ describe("gerarRoteiroIa", () => {
     clienteCom({ data: null, error: new FunctionsHttpError(new Response("<html>", { status: 502 })) });
 
     await expect(gerarRoteiroIa(PEDIDO)).rejects.toMatchObject({ message: ERRO_GENERICO, status: 502 });
+  });
+
+  it("401 do gateway sem corpo da função pede login", async () => {
+    const resposta = new Response(JSON.stringify({ code: 401, message: "Invalid JWT" }), { status: 401 });
+    clienteCom({ data: null, error: new FunctionsHttpError(resposta) });
+
+    await expect(gerarRoteiroIa(PEDIDO)).rejects.toMatchObject({ message: ERRO_LOGIN, status: 401 });
   });
 
   it("falha de rede vira mensagem de conexão", async () => {

@@ -26,6 +26,7 @@ export const ERRO_SEM_SUPABASE =
   "A geração de roteiro precisa do Supabase configurado. Sem ele, use os roteiros temáticos.";
 export const ERRO_CONEXAO = "Sem conexão com o servidor. Confira a internet e tente de novo.";
 export const ERRO_GENERICO = "Não foi possível gerar o roteiro agora. Tente de novo.";
+export const ERRO_LOGIN = "Entre na sua conta para gerar um roteiro.";
 
 /** Acima do pior caso da função (duas tentativas de 25 s, com teto de 45 s). */
 const TIMEOUT_MS = 60_000;
@@ -75,7 +76,9 @@ async function paraErroAmigavel(error: unknown): Promise<ErroGerarRoteiro> {
     const resposta: unknown = error.context;
     const status = resposta instanceof Response ? resposta.status : null;
     const mensagem = resposta instanceof Response ? await mensagemDoCorpo(resposta) : null;
-    return new ErroGerarRoteiro(mensagem ?? ERRO_GENERICO, status);
+    // 401 do gateway (antes da função rodar) vem sem `{ erro }`.
+    const padrao = status === 401 ? ERRO_LOGIN : ERRO_GENERICO;
+    return new ErroGerarRoteiro(mensagem ?? padrao, status);
   }
   if (error instanceof FunctionsFetchError) {
     return new ErroGerarRoteiro(ERRO_CONEXAO);
