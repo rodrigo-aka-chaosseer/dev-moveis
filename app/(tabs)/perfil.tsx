@@ -1,232 +1,46 @@
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { BlocoDocumento } from "@/components/perfil/BlocoDocumento";
-import { CampoDocumento } from "@/components/perfil/CampoDocumento";
-import { MolduraDocumento } from "@/components/perfil/MolduraDocumento";
-import { usePreferencias } from "@/preferencias/PreferenciasProvider";
-import { INTERESSES, nomeCidade } from "@/preferencias/dados";
-import { useSessao } from "@/sessao/SessaoProvider";
-import { MIN_TOUCH, colors, fonts, radius, spacing } from "@/theme/tokens";
-
-function iniciais(nome: string) {
-  return nome
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((parte) => parte[0]?.toUpperCase())
-    .join("");
-}
+import { Tela, Cabecalho, Botao, Secao, v } from "../../src/components/visual/Guia";
+import { usePreferencias } from "../../src/preferencias/PreferenciasProvider";
+import { INTERESSES, nomeCidade } from "../../src/preferencias/dados";
+import { useSessao } from "../../src/sessao/SessaoProvider";
+import { colors, fonts } from "../../src/theme/tokens";
 
 export default function Perfil() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { estado, email, nome, sair } = useSessao();
-  const { interesses, cidadeId, pronto, erro } = usePreferencias();
+  const { estado, nome, email, sair } = useSessao();
+  const { cidadeId, interesses, pronto, erro } = usePreferencias();
   const [saindo, setSaindo] = useState(false);
   const [erroSaida, setErroSaida] = useState<string | null>(null);
-
   const identificado = estado === "identificado";
-  const nomeExibicao = nome ?? "Explorador Raízes";
-  const cidade = nomeCidade(cidadeId);
-  const interessesSelecionados = INTERESSES.filter((item) =>
-    interesses.includes(item.id),
-  );
-
-  async function encerrarSessao() {
-    if (saindo) return;
-    setSaindo(true);
-    setErroSaida(null);
-
-    try {
-      await sair();
-      router.replace("/");
-    } catch {
-      setErroSaida(
-        "Não foi possível sair com segurança. Tente novamente para evitar que a conta reabra sozinha.",
-      );
-      setSaindo(false);
-    }
+  const exibicao = identificado ? nome ?? "Explorador" : "visitante";
+  async function encerrar() {
+    setSaindo(true); setErroSaida(null);
+    try { await sair(); router.replace("/"); }
+    catch { setErroSaida("Não foi possível encerrar. Tente novamente."); setSaindo(false); }
   }
-
-  return (
-    <View style={styles.tela}>
-      <StatusBar style="dark" />
-      <ScrollView
-        contentContainerStyle={[
-          styles.conteudo,
-          { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 36 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.tituloTela}>
-          <Text style={styles.sobretitulo}>SEU ESPAÇO</Text>
-          <Text style={styles.titulo}>Perfil</Text>
-          <Text style={styles.subtitulo}>
-            Sua identidade e as escolhas que guiam cada descoberta.
-          </Text>
-        </View>
-
-        <MolduraDocumento>
-          <BlocoDocumento primeiro>
-            <View style={styles.cabecalhoDocumento}>
-              <Text style={styles.selo}>Passaporte cultural</Text>
-              <Ionicons color={colors.documentInk} name="compass-outline" size={20} />
-            </View>
-
-            {identificado ? (
-              <View style={styles.identidade}>
-                <View accessibilityElementsHidden style={styles.disco}>
-                  <Text style={styles.iniciais}>{iniciais(nomeExibicao)}</Text>
-                </View>
-                <View style={styles.camposIdentidade}>
-                  <CampoDocumento rotulo="Nome" valor={nomeExibicao} />
-                  <CampoDocumento rotulo="E-mail" valor={email ?? "Não informado"} />
-                </View>
-              </View>
-            ) : (
-              <View style={styles.avisoVisitante}>
-                <View style={styles.iconeVisitante}>
-                  <Ionicons color={colors.accentDark} name="person-outline" size={22} />
-                </View>
-                <View style={styles.avisoVisitanteTexto}>
-                  <Text style={styles.avisoVisitanteTitulo}>
-                    Você está explorando como visitante
-                  </Text>
-                  <Text style={styles.avisoVisitanteDescricao}>
-                    Entre para manter uma conta e sincronizar suas escolhas quando o
-                    serviço estiver disponível.
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {!identificado ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.push("/login")}
-                style={({ pressed }) => [styles.botaoPrimario, pressed && styles.botaoPressionado]}
-              >
-                <Text style={styles.botaoPrimarioTexto}>Criar conta / Entrar</Text>
-              </Pressable>
-            ) : null}
-          </BlocoDocumento>
-
-          <BlocoDocumento titulo="Preferências">
-            {!pronto ? (
-              <Text style={styles.textoVazio}>Carregando suas escolhas…</Text>
-            ) : (
-              <>
-                <View style={styles.linhaCidade}>
-                  <View style={styles.iconeCidade}>
-                    <Ionicons color={colors.accent} name="location-outline" size={18} />
-                  </View>
-                  <View style={styles.cidadeTexto}>
-                    <Text style={styles.rotuloCidade}>Cidade escolhida</Text>
-                    <Text style={styles.valorCidade}>{cidade ?? "Ainda não escolhida"}</Text>
-                  </View>
-                </View>
-
-                {interessesSelecionados.length > 0 ? (
-                  <View style={styles.preferencias}>
-                    {interessesSelecionados.map((interesse) => (
-                      <View key={interesse.id} style={styles.etiqueta}>
-                        <Text style={styles.etiquetaIcone}>{interesse.icone}</Text>
-                        <Text style={styles.etiquetaTexto}>{interesse.nome}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={styles.textoVazio}>Nenhum interesse selecionado.</Text>
-                )}
-              </>
-            )}
-
-            {erro ? <Text style={styles.erro}>{erro}</Text> : null}
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Editar interesses e cidade"
-              onPress={() => router.push("/onboarding")}
-              style={({ pressed }) => [styles.botaoEditar, pressed && styles.botaoEditarPressionado]}
-            >
-              <Ionicons color={colors.documentInk} name="pencil-outline" size={17} />
-              <Text style={styles.botaoEditarTexto}>Editar</Text>
-            </Pressable>
-          </BlocoDocumento>
-
-          <BlocoDocumento titulo="Sessão">
-            <Text style={styles.sessaoTexto}>
-              {identificado
-                ? "Ao sair, esta conta não será aberta automaticamente na próxima vez."
-                : "A sessão de visitante termina automaticamente à meia-noite."}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ busy: saindo, disabled: saindo }}
-              disabled={saindo}
-              onPress={encerrarSessao}
-              style={({ pressed }) => [
-                styles.botaoSair,
-                pressed && styles.botaoSairPressionado,
-                saindo && styles.botaoDesabilitado,
-              ]}
-            >
-              <Ionicons color={colors.error} name="log-out-outline" size={18} />
-              <Text style={styles.botaoSairTexto}>{saindo ? "Saindo…" : "Sair da conta"}</Text>
-            </Pressable>
-            {erroSaida ? (
-              <Text accessibilityLiveRegion="assertive" style={styles.erro}>{erroSaida}</Text>
-            ) : null}
-          </BlocoDocumento>
-        </MolduraDocumento>
-      </ScrollView>
+  return <Tela fundo={colors.profileBackground}>
+    <Cabecalho legenda="DO SEU JEITO" titulo="Seu espaço" descricao="Cada descoberta começa com você." />
+    <View style={s.identidade}><View style={s.avatar}>{identificado ? <Text style={s.iniciais}>{exibicao.slice(0, 1).toUpperCase()}</Text> : <Ionicons name="person-outline" size={30} color={colors.accentDark} />}</View><View style={{ flex: 1, gap: 4 }}><Text style={s.nome}>Olá, {exibicao}.</Text><Text style={v.descricao}>{identificado ? email : "Que bom ter você por aqui."}</Text></View></View>
+    {!identificado ? <View style={s.convite}><Ionicons name="sparkles-outline" size={24} color={colors.accentDark} /><Text style={v.secaoTitulo}>Guarde suas descobertas</Text><Text style={v.descricao}>Crie seu acesso para continuar sua jornada cultural.</Text><Botao texto="Entrar ou criar conta" onPress={() => router.push("/login")} /></View> : null}
+    <Secao titulo="Suas preferências" />
+    <View style={v.bloco}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Editar cidade e interesses" onPress={() => router.push("/onboarding")} style={s.linha}>
+        <View style={s.icone}><Ionicons name="location-outline" size={22} color={colors.accentDark} /></View><View style={{ flex: 1, gap: 3 }}><Text style={v.descricao}>Cidade para explorar</Text><Text style={s.valor}>{pronto ? nomeCidade(cidadeId) ?? "Escolha sua cidade" : "Carregando…"}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      </Pressable>
+      <View style={s.divisor} /><Text style={v.descricao}>O que desperta sua curiosidade</Text>
+      <View style={v.etiquetas}>{INTERESSES.filter((item) => interesses.includes(item.id)).map((item) => <View key={item.id} style={[v.etiqueta, { backgroundColor: colors.surface2 }]}><Text style={v.etiquetaTexto}>{item.icone}  {item.nome}</Text></View>)}</View>
+      <Pressable accessibilityRole="button" style={s.editar} onPress={() => router.push("/onboarding")}><Ionicons name="options-outline" size={18} color={colors.accentDark} /><Text style={v.link}>{interesses.length ? "Editar preferências" : "Escolher meus interesses"}</Text></Pressable>
+      {erro ? <Text style={v.erro}>{erro}</Text> : null}
     </View>
-  );
+    <View style={s.nota}><Ionicons name="compass-outline" size={20} color={colors.earth} /><Text style={[v.descricao, { flex: 1 }]}>Novos olhares, novas histórias. Continue explorando a cidade.</Text></View>
+    <Pressable accessibilityRole="button" disabled={saindo} style={s.sair} onPress={encerrar}><Ionicons name="log-out-outline" size={18} color={colors.textMuted} /><Text style={v.descricao}>{saindo ? "Encerrando…" : identificado ? "Sair da conta" : "Encerrar visita"}</Text></Pressable>
+    {erroSaida ? <Text accessibilityRole="alert" style={v.erro}>{erroSaida}</Text> : null}
+  </Tela>;
 }
-
-const styles = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: colors.paper },
-  conteudo: { paddingHorizontal: spacing.pageX },
-  tituloTela: { marginBottom: 22 },
-  sobretitulo: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 1.4, color: colors.accentDark },
-  titulo: { marginTop: 6, fontFamily: fonts.extrabold, fontSize: 31, color: colors.text },
-  subtitulo: { maxWidth: 330, marginTop: 6, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.textMuted },
-  cabecalhoDocumento: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
-  selo: { fontFamily: fonts.extrabold, fontSize: 11, letterSpacing: 2.1, textTransform: "uppercase", color: colors.documentInk },
-  identidade: { flexDirection: "row", alignItems: "center", gap: 16 },
-  disco: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", backgroundColor: colors.earth },
-  iniciais: { fontFamily: fonts.extrabold, fontSize: 20, letterSpacing: 0.5, color: colors.surface },
-  camposIdentidade: { flex: 1, gap: 12 },
-  avisoVisitante: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  iconeVisitante: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentTint },
-  avisoVisitanteTexto: { flex: 1 },
-  avisoVisitanteTitulo: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 20, color: colors.documentInk },
-  avisoVisitanteDescricao: { marginTop: 4, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.inkMuted },
-  botaoPrimario: { minHeight: 48, marginTop: 18, borderRadius: radius.button, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent },
-  botaoPrimarioTexto: { fontFamily: fonts.semibold, fontSize: 14, color: colors.onDark },
-  botaoPressionado: { transform: [{ scale: 0.98 }], opacity: 0.9 },
-  linhaCidade: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
-  iconeCidade: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentSoft },
-  cidadeTexto: { flex: 1 },
-  rotuloCidade: { fontFamily: fonts.regular, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, color: colors.inkMuted },
-  valorCidade: { marginTop: 2, fontFamily: fonts.semibold, fontSize: 15, color: colors.documentInk },
-  preferencias: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
-  etiqueta: { flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 1, borderColor: colors.stampEmpty, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6 },
-  etiquetaIcone: { fontSize: 12, color: colors.documentInk },
-  etiquetaTexto: { fontFamily: fonts.regular, fontSize: 12, color: colors.documentInk },
-  textoVazio: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, color: colors.inkMuted },
-  botaoEditar: { minHeight: MIN_TOUCH, marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1.5, borderColor: colors.documentInk, borderRadius: radius.document },
-  botaoEditarPressionado: { backgroundColor: "rgba(92, 61, 46, 0.07)" },
-  botaoEditarTexto: { fontFamily: fonts.semibold, fontSize: 14, color: colors.documentInk },
-  sessaoTexto: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.inkMuted },
-  botaoSair: { minHeight: MIN_TOUCH, marginTop: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: colors.error, borderRadius: radius.button },
-  botaoSairPressionado: { backgroundColor: colors.errorSoft },
-  botaoSairTexto: { fontFamily: fonts.semibold, fontSize: 14, color: colors.error },
-  botaoDesabilitado: { opacity: 0.55 },
-  erro: { marginTop: 12, fontFamily: fonts.semibold, fontSize: 12, lineHeight: 18, color: colors.error },
+const s = StyleSheet.create({
+  identidade: { flexDirection: "row", gap: 16, alignItems: "center", paddingVertical: 10 }, avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accentTint, alignItems: "center", justifyContent: "center" }, iniciais: { color: colors.accentDark, fontFamily: fonts.extrabold, fontSize: 30 },
+  nome: { fontFamily: fonts.semibold, fontSize: 23, letterSpacing: -0.7, color: colors.text }, convite: { padding: 22, backgroundColor: colors.paper, borderRadius: 26, gap: 12 }, linha: { flexDirection: "row", gap: 12, alignItems: "center", minHeight: 56 }, icone: { width: 46, height: 46, backgroundColor: colors.surface2, borderRadius: 16, alignItems: "center", justifyContent: "center" }, valor: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text }, divisor: { height: 1, backgroundColor: colors.surface2 }, editar: { flexDirection: "row", gap: 10, minHeight: 44, alignItems: "center" }, nota: { flexDirection: "row", alignItems: "center", gap: 14, padding: 8 }, sair: { alignSelf: "center", flexDirection: "row", gap: 8, minHeight: 48, alignItems: "center" },
 });

@@ -12,7 +12,7 @@ import { CIDADES, type CidadeId } from "../preferencias/dados";
 
 const ATRASO_MS = 250;
 const RAIO_CIDADE_KM = 30;
-const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome))";
+export const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome))";
 // Só o detalhe precisa das tabelas 1:1; a lista continua leve.
 const SELECT_DETALHE = `${SELECT_LOCAL}, acessibilidade(*), ambiente_sensorial(*)`;
 
@@ -85,8 +85,18 @@ async function buscarDoMock(id: string): Promise<LocalDetalhe | null> {
   return { ...local, acessibilidade: ACESSIBILIDADE_DESCONHECIDA, ambienteSensorial: null };
 }
 
-function supabaseUrlDefinida(): boolean {
+export function supabaseUrlDefinida(): boolean {
   return Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL?.trim());
+}
+
+/**
+ * Linha de `locais` vinda de um join (roteiro_paradas → locais) para o
+ * formato das telas. null quando a linha não veio (lugar arquivado: o RLS
+ * de `locais` esconde) ou não tem o mínimo para ser um lugar.
+ */
+export function linhaParaLocal(valor: unknown): LocalLista | null {
+  if (!ehLinhaLocal(valor)) return null;
+  return mapearLocal(valor, cidadeDoLocal(valor));
 }
 
 function consultaPublica(colunas: string = SELECT_LOCAL) {

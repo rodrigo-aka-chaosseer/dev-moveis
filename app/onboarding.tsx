@@ -220,7 +220,7 @@ export default function Onboarding() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface2,
   },
   header: {
     minHeight: 76,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backButtonPressed: {
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface,
     transform: [{ scale: 0.96 }],
   },
   backIcon: {
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     overflow: "hidden",
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface,
   },
   progressFill: {
     width: "100%",
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.surface3,
     borderRadius: radius.card,
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface,
     shadowColor: "#0f172a",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     borderWidth: 1.5,
     borderColor: colors.surface3,
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface,
     paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",

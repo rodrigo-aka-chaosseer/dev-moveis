@@ -82,7 +82,7 @@ export default function Cadastro() {
     }
 
     try {
-      await entrar(resultado.email, resultado.nome);
+      await entrar(resultado.email, resultado.nome, resultado.usuarioId);
       router.replace("/onboarding");
     } catch {
       setErroGeral("A conta foi criada, mas não foi possível iniciar a sessão.");
@@ -353,8 +353,11 @@ const styles = StyleSheet.create({
     minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.inputBorder,
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
   },
   entradaErro: { borderBottomWidth: 2, borderBottomColor: colors.error },
   entrada: {
@@ -421,7 +424,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.pageX,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface2,
   },
   sucessoIcone: {
     width: 88,

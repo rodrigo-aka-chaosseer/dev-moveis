@@ -88,21 +88,28 @@ export function SecaoAmbienteSensorial({ ambiente }: { ambiente: AmbienteSensori
   );
 }
 
+// Mesmo visual dos cartões de `components/visual/Guia` (v.bloco e
+// v.secaoTitulo). Os valores ficam aqui para o teste de componente não
+// precisar carregar o Guia inteiro.
 const styles = StyleSheet.create({
   secao: {
-    marginBottom: 24,
+    backgroundColor: colors.surface,
+    padding: 20,
+    borderRadius: 24,
+    gap: 4,
   },
   titulo: {
-    fontFamily: fonts.extrabold,
-    fontSize: 16,
+    fontFamily: fonts.semibold,
+    fontSize: 19,
+    letterSpacing: -0.5,
     color: colors.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   linha: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 9,
+    minHeight: 40,
     borderBottomWidth: 1,
     borderBottomColor: colors.surface3,
   },
@@ -115,7 +122,7 @@ const styles = StyleSheet.create({
   valor: {
     fontFamily: fonts.semibold,
     fontSize: 13,
-    color: colors.text,
+    color: colors.earth,
   },
   valorDesconhecido: {
     fontFamily: fonts.regular,
@@ -123,8 +130,8 @@ const styles = StyleSheet.create({
   },
   vazio: {
     fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 21,
     color: colors.textMuted,
   },
 });

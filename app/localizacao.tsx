@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   tela: {
     flex: 1,
     paddingHorizontal: spacing.pageX,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface2,
   },
   topo: {
     minHeight: MIN_TOUCH,

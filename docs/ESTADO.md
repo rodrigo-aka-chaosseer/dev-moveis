@@ -17,6 +17,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [ ] RAÍZES-04 — tela de perfil
 - [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
 - [x] RAÍZES-14 — primeiro lote com 8 lugares curados de Salvador e Recife
+- [x] RAÍZES-19 — sessão do app unificada com o Supabase Auth (Josias, #35)
 
 ## Pendências que nasceram do login (decisão 4)
 
@@ -81,7 +82,16 @@ apresentação.
 ## Perfil e sincronização
 
 A tela de perfil já consome sessão e preferências locais, diferencia visitante
-de pessoa autenticada e oferece logout seguro. A sincronização da tabela
-`preferencias` continua pendente da RAÍZES-22: a sessão atual ainda não possui
-UUID/token do Supabase, portanto não existe `usuario_id` autenticado para um
-upsert protegido por RLS.
+de pessoa autenticada e oferece logout seguro.
+
+Desde a RAÍZES-19, com Supabase configurado, a sessão de conta identificada é
+um espelho do `supabase.auth`: na abertura o app confere com `getSession()`,
+acompanha `onAuthStateChange` e `useSessao()` expõe `usuarioId` (o `user.id`
+do Supabase). Sessão expirada no servidor apaga a local; `sair()` apaga a
+local e depois encerra no Supabase, sem o app entrar de novo sozinho.
+Visitante continua só local. As regras moram em
+`src/sessao/controleSessao.ts`.
+
+Com o `usuarioId` disponível, o upsert em `preferencias` protegido por RLS já
+pode ser feito. Ligá-lo à tela continua sendo escopo da RAÍZES-22: hoje o
+perfil só lê as preferências locais e não existe ponto de gravação pendente.

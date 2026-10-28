@@ -1,3 +1,5 @@
+import { Platform, View } from "react-native";
+import { colors } from "../src/theme/tokens";
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -47,7 +49,8 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ backgroundColor: colors.paper }}>
+      <View style={{ flex: 1, width: "100%", maxWidth: Platform.OS === "web" ? 520 : undefined, alignSelf: "center" }}>
       <SessaoProvider sessaoInicial={sessao.sessaoInicial}>
         <PreferenciasProvider>
           <LocalizacaoProvider>
@@ -56,6 +59,7 @@ export default function RootLayout() {
           </LocalizacaoProvider>
         </PreferenciasProvider>
       </SessaoProvider>
+    </View>
     </SafeAreaProvider>
   );
 }
@@ -77,6 +81,7 @@ function Rotas() {
       </Stack.Protected>
       <Stack.Protected guard={temSessao}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="local/[id]" />
         <Stack.Screen name="roteiro/[id]" />
         <Stack.Screen name="localizacao" />
       </Stack.Protected>
