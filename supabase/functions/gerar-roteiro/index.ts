@@ -91,6 +91,9 @@ async function atender(req: Request): Promise<Desfecho> {
   const { data: usuario, error: erroUsuario } = await supabase.auth.getUser(token);
   if (erroUsuario || !usuario.user) return falhar("nao_autenticado");
 
+  // Confere o tamanho declarado antes de ler, e o lido depois (o header pode mentir).
+  const declarado = Number(req.headers.get("Content-Length") ?? 0);
+  if (declarado > LIMITES_PEDIDO.maxBytesCorpo) return falhar("pedido_invalido", "corpo_grande");
   const texto = await req.text();
   if (texto.length > LIMITES_PEDIDO.maxBytesCorpo) return falhar("pedido_invalido", "corpo_grande");
   let corpo: unknown;
