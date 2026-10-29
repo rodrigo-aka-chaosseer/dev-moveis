@@ -12,6 +12,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 import { Botao } from "../../src/components/visual/Guia";
+import {
+  ErroGeracao,
+  GerandoRoteiro,
+  ResultadoRoteiro,
+} from "../../src/components/roteiros/RoteiroGeradoTela";
 import { usePreferencias } from "../../src/preferencias/PreferenciasProvider";
 import {
   CIDADES,
@@ -31,6 +36,7 @@ import type {
   NecessidadeAcessibilidade,
   Ritmo,
 } from "../../src/roteiros/ia/gerarRoteiroIa";
+import { useGeracaoRoteiro } from "../../src/roteiros/ia/useGeracaoRoteiro";
 import { colors, fonts, MIN_TOUCH, radius, spacing } from "../../src/theme/tokens";
 
 type Icone = ComponentProps<typeof Ionicons>["name"];
@@ -81,14 +87,15 @@ function FormularioRoteiroTela({
     cidadeId: cidadeInicial,
     interesses: [...interessesIniciais],
   }));
-  const [enviado, setEnviado] = useState(false);
+  const geracao = useGeracaoRoteiro();
+  const { estado } = geracao;
   const valido = formularioRoteiroValido(formulario);
+  const noFormulario = estado.fase === "parado";
 
   function atualizar<K extends keyof FormularioRoteiro>(
     campo: K,
     valor: FormularioRoteiro[K],
   ) {
-    setEnviado(false);
     setFormulario((atual) => ({ ...atual, [campo]: valor }));
   }
 
@@ -112,16 +119,18 @@ function FormularioRoteiroTela({
       <View style={[s.topo, { paddingTop: insets.top + 8 }]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Voltar para Roteiros"
+          accessibilityLabel={noFormulario ? "Voltar para Roteiros" : "Voltar para as preferências"}
           hitSlop={8}
-          onPress={() => router.back()}
+          onPress={() => (noFormulario ? router.back() : geracao.voltarAoFormulario())}
           style={({ pressed }) => [s.voltar, pressed && s.pressionado]}
         >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <View style={s.topoTexto}>
           <Text style={s.legenda}>ROTEIRO PERSONALIZADO</Text>
-          <Text accessibilityRole="header" style={s.titulo}>Crie seu passeio com IA</Text>
+          <Text accessibilityRole="header" style={s.titulo}>
+            {noFormulario ? "Crie seu passeio com IA" : "Seu roteiro sugerido"}
+          </Text>
         </View>
       </View>
 
@@ -130,11 +139,36 @@ function FormularioRoteiroTela({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[s.conteudo, { paddingBottom: insets.bottom + 32 }]}
       >
+        {estado.fase === "gerando" ? (
+          <GerandoRoteiro motivo={estado.motivo} cidadeId={formulario.cidadeId} />
+        ) : estado.fase === "erro" ? (
+          <ErroGeracao
+            mensagem={estado.mensagem}
+            onTentarDeNovo={geracao.tentarDeNovo}
+            onEditar={geracao.voltarAoFormulario}
+          />
+        ) : estado.fase === "pronto" && geracao.preferencias ? (
+          <ResultadoRoteiro
+            roteiro={estado.roteiro}
+            preferencias={geracao.preferencias}
+            candidatos={geracao.candidatos}
+            aviso={geracao.aviso}
+            podeEncurtar={geracao.podeEncurtar}
+            podeEconomizar={geracao.podeEconomizar}
+            onRemover={geracao.remover}
+            onTrocar={geracao.trocar}
+            onMaisCurto={() => geracao.ajustar("mais_curto")}
+            onMaisEconomico={() => geracao.ajustar("mais_economico")}
+            onAcessibilidade={geracao.priorizarAcessibilidade}
+            onOutraSugestao={geracao.outraSugestao}
+            onEditar={geracao.voltarAoFormulario}
+          />
+        ) : (
+        <>
         <Text style={s.introducao}>
           Conte como você quer explorar a cidade. Suas escolhas do início já aparecem aqui e podem ser ajustadas só para este roteiro.
         </Text>
 
-        <>
             <Secao titulo="Cidade" descricao="Escolha onde será o passeio." obrigatorio icone="location-outline">
               <View style={s.opcoesLinha}>
                 {CIDADES.map((cidade) => (
@@ -226,18 +260,13 @@ function FormularioRoteiroTela({
             <Botao
               texto="Gerar meu roteiro"
               disabled={!valido}
-              onPress={() => setEnviado(true)}
+              onPress={() => {
+                if (!formulario.cidadeId) return;
+                void geracao.gerar({ ...formulario, cidadeId: formulario.cidadeId });
+              }}
             />
-
-            {enviado ? (
-              <View accessibilityLiveRegion="polite" style={s.sucesso}>
-                <Ionicons name="checkmark-circle" size={22} color={colors.accentDark} />
-                <Text style={s.sucessoTexto}>
-                  Pedido pronto! A geração com IA será conectada na próxima etapa.
-                </Text>
-              </View>
-            ) : null}
         </>
+        )}
       </ScrollView>
     </View>
   );
@@ -403,6 +432,4 @@ const s = StyleSheet.create({
   opcaoDetalhadaTexto: { flex: 1, gap: 2 },
   opcaoDetalhadaTitulo: { fontFamily: fonts.semibold, fontSize: 13, color: colors.text },
   aviso: { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 18, textAlign: "center", color: colors.error },
-  sucesso: { padding: 16, borderRadius: radius.input, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.accentTint },
-  sucessoTexto: { flex: 1, fontFamily: fonts.semibold, fontSize: 13, lineHeight: 20, color: colors.accentDark },
 });

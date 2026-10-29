@@ -1,13 +1,25 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { rotuloCusto, rotuloDistanciaMetros, rotuloDuracao } from "../../roteiros/calculos";
-import { paradasDisponiveis, type Roteiro } from "../../roteiros/listarRoteiros";
 import { colors, fonts } from "../../theme/tokens";
 
-/** Paradas, duração, distância e custo: os quatro números do protótipo. */
-export function NumerosRoteiro({ roteiro, fundo = colors.surface2 }: { roteiro: Roteiro; fundo?: string }) {
+type Totais = { duracaoMin: number; distanciaMetros: number; custoCentavos: number | null };
+
+/**
+ * Paradas, duração, distância e custo: os quatro números do protótipo. Serve
+ * para roteiro temático e para o gerado pela IA, por isso recebe só os totais.
+ */
+export function NumerosRoteiro({
+  roteiro,
+  paradas,
+  fundo = colors.surface2,
+}: {
+  roteiro: Totais;
+  paradas: number;
+  fundo?: string;
+}) {
   const numeros = [
-    { valor: String(paradasDisponiveis(roteiro).length), rotulo: "Paradas" },
+    { valor: String(paradas), rotulo: "Paradas" },
     { valor: rotuloDuracao(roteiro.duracaoMin), rotulo: "Duração" },
     { valor: rotuloDistanciaMetros(roteiro.distanciaMetros), rotulo: "Distância" },
     { valor: rotuloCusto(roteiro.custoCentavos), rotulo: "Custo" },

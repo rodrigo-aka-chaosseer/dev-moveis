@@ -27,24 +27,39 @@ export type RoteiroCalculado = {
  * (duracao_min, distancia_metros, custo_centavos, hora_sugerida).
  */
 export function calcularRoteiro(locais: LocalLista[], inicio = "09:00"): RoteiroCalculado {
+  return calcularParadas(
+    locais.map((local) => ({ local, duracaoMin: local.tempoMedioMin })),
+    inicio,
+  );
+}
+
+/**
+ * Mesma conta de `calcularRoteiro`, mas com a duração de cada parada vinda de
+ * fora (a IA pode sugerir mais ou menos tempo que o tempo médio do lugar).
+ * É a conta que o servidor faz em `totais` (supabase/functions/_shared).
+ */
+export function calcularParadas(
+  itens: { local: LocalLista; duracaoMin: number }[],
+  inicio = "09:00",
+): RoteiroCalculado {
   let metros = 0;
   let relogio = paraMinutos(inicio);
   const paradas: ParadaCalculada[] = [];
 
-  locais.forEach((local, indice) => {
+  itens.forEach(({ local, duracaoMin }, indice) => {
     if (indice > 0) {
-      const anterior = locais[indice - 1];
+      const anterior = itens[indice - 1].local;
       const trecho =
         distanciaKm(anterior.latitude, anterior.longitude, local.latitude, local.longitude) * 1000;
       metros += trecho;
       // Horário redondo: "11:25" se lê melhor que "11:23" e dá folga na caminhada.
       relogio = Math.ceil((relogio + trecho / METROS_POR_MINUTO_A_PE) / 5) * 5;
     }
-    paradas.push({ local, horaSugerida: paraHora(relogio), duracaoMin: local.tempoMedioMin });
-    relogio += local.tempoMedioMin;
+    paradas.push({ local, horaSugerida: paraHora(relogio), duracaoMin });
+    relogio += duracaoMin;
   });
 
-  const precos = locais.map((local) => (local.gratuito ? 0 : local.precoCentavos));
+  const precos = itens.map(({ local }) => (local.gratuito ? 0 : local.precoCentavos));
   const custoCentavos = precos.some((preco) => preco == null)
     ? null
     : precos.reduce<number>((soma, preco) => soma + (preco ?? 0), 0);

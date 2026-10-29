@@ -7,7 +7,7 @@ import { NumerosRoteiro } from "../../src/components/roteiros/NumerosRoteiro";
 import { rotuloCategoria } from "../../src/locais/listarLocais";
 import { nomeCidade } from "../../src/preferencias/dados";
 import { rotuloDuracao } from "../../src/roteiros/calculos";
-import type { ParadaRoteiro } from "../../src/roteiros/listarRoteiros";
+import { paradasDisponiveis, type ParadaRoteiro } from "../../src/roteiros/listarRoteiros";
 import { useRoteiro } from "../../src/roteiros/useRoteiros";
 import { colors, fonts } from "../../src/theme/tokens";
 
@@ -27,7 +27,7 @@ export default function DetalheRoteiro() {
       <Text accessibilityRole="header" style={v.titulo}>{roteiro.titulo}</Text>
       {roteiro.descricao ? <Text style={v.descricao}>{roteiro.descricao}</Text> : null}
     </View>
-    <NumerosRoteiro roteiro={roteiro} fundo={colors.surface} />
+    <NumerosRoteiro roteiro={roteiro} paradas={paradasDisponiveis(roteiro).length} fundo={colors.surface} />
     {roteiro.paradas.length === 0
       ? <Estado titulo="Ainda sem paradas" descricao="Este roteiro ainda não tem lugares publicados." icone="trail-sign-outline" />
       : <View>{roteiro.paradas.map((parada, indice) => <Parada key={parada.ordem} parada={parada} numero={indice + 1} ultima={indice === roteiro.paradas.length - 1} onAbrir={(localId) => router.push(`/local/${localId}` as Href)} />)}</View>}
