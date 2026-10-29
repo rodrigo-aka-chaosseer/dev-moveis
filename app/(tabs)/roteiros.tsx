@@ -32,7 +32,7 @@ function CartaoRoteiro({ roteiro, onPress }: { roteiro: Roteiro; onPress: () => 
   return <Pressable accessibilityRole="button" accessibilityLabel={`Roteiro ${roteiro.titulo}, ${disponiveis.length} paradas`} onPress={onPress} style={({ pressed }) => [v.bloco, pressed && { opacity: 0.8 }]}>
     <Text style={v.secaoTitulo}>{roteiro.titulo}</Text>
     {roteiro.descricao ? <Text style={v.descricao}>{roteiro.descricao}</Text> : null}
-    <NumerosRoteiro roteiro={roteiro} />
+    <NumerosRoteiro roteiro={roteiro} paradas={disponiveis.length} />
     <View style={s.paradas}>{disponiveis.map((parada, indice) => <View key={parada.ordem} style={s.parada}><View style={s.ponto}><Text style={s.numero}>{indice + 1}</Text></View><Text numberOfLines={1} style={s.nome}>{parada.local.nome}</Text></View>)}</View>
     {fora ? <Text style={s.aviso}>{fora === 1 ? "1 parada saiu do roteiro porque o lugar não está mais publicado." : `${fora} paradas saíram do roteiro porque os lugares não estão mais publicados.`}</Text> : null}
     <View style={s.ver}><Text style={v.link}>Ver roteiro</Text><Ionicons name="arrow-forward" size={16} color={colors.accentDark} /></View>

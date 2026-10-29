@@ -181,7 +181,8 @@ function combinaComInteresses(local: LocalDetalhe, interesses: readonly Interess
   });
 }
 
-function avaliarAcessibilidade(
+/** Exportada para a troca de parada (#51) usar a mesma régua da seleção. */
+export function avaliarAcessibilidade(
   local: LocalDetalhe,
   necessidades: readonly NecessidadeAcessibilidade[],
 ): { podeEntrar: boolean; avisos: string[] } {

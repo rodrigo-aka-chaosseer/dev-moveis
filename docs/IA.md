@@ -202,8 +202,15 @@ acessibilidade, mensagem bruta de erro da API.
   `src/roteiros/ia/prepararCandidatos.ts`.
 - **#53** é o formulário: usa `LIMITES_PEDIDO`, `RITMOS` e
   `NECESSIDADES_ACESSIBILIDADE` reexportados pelo cliente.
-- **#52/#51** exibem e ajustam: `acessibilidadeNaoConfirmada` e `avisos`
-  precisam aparecer na tela; salvar vira `roteiros.tipo = 'gerado'`.
+- **#52/#51** concluídas: `app/roteiro/criar.tsx` gera, mostra e ajusta o
+  roteiro sem voltar ao formulário (`useGeracaoRoteiro` e
+  `src/roteiros/ia/roteiroGerado.ts`). Remover e trocar parada são feitos no
+  app, só com candidatos do mesmo pedido, sem lugar repetido e sem deixar o
+  roteiro vazio; totais e horários são recalculados com `calcularParadas`.
+  "Mais curto", "mais econômico", "priorizar acessibilidade" e "outra
+  sugestão" pedem um novo roteiro à IA mudando só o campo do ajuste; "outra
+  sugestão" manda os lugares atuais para o fim da lista de candidatos.
+- Salvar o roteiro gerado (`roteiros.tipo = 'gerado'`) continua pendente.
 - Sem limite de uso por pessoa ainda: qualquer conta logada pode chamar à
   vontade. Próximo passo é um limite diário (tabela de contagem por usuário
   e dia, checada antes da chamada à IA).
