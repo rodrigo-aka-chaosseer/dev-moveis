@@ -17,6 +17,7 @@ export default function Roteiros() {
 
   return <Tela>
     <Cabecalho legenda="CADA PARADA, UMA HISTÓRIA" titulo="Caminhos para descobrir." descricao={cidade ? `Roteiros temáticos por ${cidade}, com tempo, distância e custo de cada caminho.` : "Um tema, vários lugares e um novo jeito de viver a cidade."} />
+    <Botao texto="Criar roteiro com IA" onPress={() => router.push("/roteiro/criar")} />
     {!pronto || carregando ? <Estado titulo="Traçando os caminhos…" carregando />
       : erro ? <><Estado titulo="Não conseguimos carregar" descricao={erro} icone="cloud-offline-outline" /><Botao texto="Tentar novamente" onPress={recarregar} secundario /></>
       : !cidadeId ? <><Estado titulo="Escolha uma cidade" descricao="Selecione Salvador ou Recife na Início ou no Explorar para ver os roteiros." /><Botao texto="Escolher no Explorar" onPress={() => router.push("/(tabs)/explorar")} /></>

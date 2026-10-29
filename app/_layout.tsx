@@ -82,6 +82,7 @@ function Rotas() {
       <Stack.Protected guard={temSessao}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="local/[id]" />
+        <Stack.Screen name="roteiro/criar" />
         <Stack.Screen name="roteiro/[id]" />
         <Stack.Screen name="localizacao" />
       </Stack.Protected>
