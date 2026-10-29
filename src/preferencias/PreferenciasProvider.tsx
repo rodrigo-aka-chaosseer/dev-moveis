@@ -8,33 +8,29 @@ import {
   type ReactNode,
 } from "react";
 
-import { CIDADES, INTERESSES, type CidadeId, type InteresseId } from "./dados";
+import { useSessao } from "../sessao/SessaoProvider";
+import {
+  CIDADES,
+  filtrarInteresses,
+  type CidadeId,
+  type InteresseId,
+  type Preferencias,
+} from "./dados";
+import { criarSincronizador } from "./sincronizar";
 
 const CHAVE_PREFERENCIAS = "raizes.preferencias.v1";
-
-type Preferencias = {
-  interesses: InteresseId[];
-  cidadeId: CidadeId | null;
-  /** Só vira true quando a pessoa termina as duas etapas do onboarding. */
-  onboardingConcluido: boolean;
-};
 
 const VAZIAS: Preferencias = { interesses: [], cidadeId: null, onboardingConcluido: false };
 
 function lerRegistro(valor: unknown): Preferencias {
   if (typeof valor !== "object" || valor === null) return VAZIAS;
   const registro = valor as Record<string, unknown>;
-  const ids = new Set<string>(INTERESSES.map((item) => item.id));
-  const interesses = Array.isArray(registro.interesses)
-    ? registro.interesses.filter(
-        (id): id is InteresseId => typeof id === "string" && ids.has(id),
-      )
-    : [];
+  const interesses = filtrarInteresses(registro.interesses);
   const cidadeId = CIDADES.find((cidade) => cidade.id === registro.cidadeId)?.id ?? null;
   // Sem cidade válida o onboarding não está completo, mesmo que o disco diga
   // o contrário.
   const onboardingConcluido = registro.onboardingConcluido === true && cidadeId !== null;
-  return { interesses: [...new Set(interesses)], cidadeId, onboardingConcluido };
+  return { interesses, cidadeId, onboardingConcluido };
 }
 
 type ContextoPreferencias = Preferencias & {
@@ -54,6 +50,13 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
   const [erro, setErro] = useState<string | null>(null);
   const atual = useRef<Preferencias>(VAZIAS);
   const fila = useRef<Promise<void>>(Promise.resolve());
+  const { usuarioId } = useSessao();
+  // Interesses e onboarding sobem para a conta; a cidade fica no aparelho.
+  // As regras de mesclagem e as corridas (logout, troca de conta, resposta
+  // atrasada) moram em `sincronizar.ts`.
+  const [sincronizador] = useState(() =>
+    criarSincronizador({ atual: () => atual.current, aplicar: atualizar }),
+  );
 
   useEffect(() => {
     let ativo = true;
@@ -73,6 +76,12 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
     return () => { ativo = false; };
   }, []);
 
+  // Só depois de ler o disco: a mesclagem precisa das preferências locais.
+  useEffect(() => {
+    if (!pronto || !usuarioId) return;
+    return sincronizador.entrar(usuarioId);
+  }, [pronto, usuarioId, sincronizador]);
+
   function atualizar(novas: Preferencias) {
     atual.current = novas;
     setPreferencias(novas);
@@ -91,6 +100,7 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
       ? atual.current.interesses.filter((item) => item !== id)
       : [...atual.current.interesses, id];
     atualizar({ ...atual.current, interesses });
+    sincronizador.aoAlterar();
   }
 
   function escolherCidade(id: CidadeId) {
@@ -103,6 +113,8 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
       throw new Error("Onboarding sem cidade escolhida.");
     }
     atualizar({ ...atual.current, onboardingConcluido: true });
+    // Melhor esforço: não espera o servidor nem falha por causa dele.
+    sincronizador.aoAlterar();
     try {
       await fila.current;
     } catch (erroGravacao) {
