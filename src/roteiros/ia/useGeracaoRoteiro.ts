@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from "react";
 
 import { listarLocaisDetalhados, type LocalDetalhe } from "../../locais/listarLocais";
+import { supabaseConfigurado } from "../../lib/supabase";
 import { ErroGerarRoteiro, ERRO_GENERICO, gerarRoteiroIa, type NecessidadeAcessibilidade } from "./gerarRoteiroIa";
+import { gerarRoteiroDemonstracao } from "./gerarRoteiroDemonstracao";
 import {
   ErroPreferenciasRecomendacao,
   padronizarPreferencias,
@@ -40,6 +42,8 @@ export type EstadoGeracao =
  * a tela mostrar (#52) e ajustar (#51) sem voltar ao formulário.
  */
 export function useGeracaoRoteiro() {
+  const modoDemonstracao =
+    process.env.EXPO_PUBLIC_MODO_IA_DEMO === "true" || !supabaseConfigurado;
   const [estado, setEstado] = useState<EstadoGeracao>({ fase: "parado" });
   const [preferencias, setPreferencias] = useState<PreferenciasRecomendacao | null>(null);
   const [candidatos, setCandidatos] = useState<LocalDetalhe[]>([]);
@@ -64,8 +68,11 @@ export function useGeracaoRoteiro() {
 
         const anterior = roteiroAnterior.current;
         const ordenados = anterior ? priorizarOutrosLugares(selecionados, anterior) : selecionados;
-        const ia = await gerarRoteiroIa({ ...pedido, candidatos: ordenados });
-        const roteiro = montarRoteiroGerado(ia, catalogo);
+        const pedidoCompleto = { ...pedido, candidatos: ordenados };
+        const sugestao = modoDemonstracao
+          ? gerarRoteiroDemonstracao(pedidoCompleto, catalogo)
+          : await gerarRoteiroIa(pedidoCompleto);
+        const roteiro = montarRoteiroGerado(sugestao, catalogo);
         if (numero !== pedidoAtual.current) return;
 
         const ids = new Set(selecionados.map((item) => item.id));
@@ -77,7 +84,7 @@ export function useGeracaoRoteiro() {
         setEstado({ fase: "erro", mensagem: mensagemDe(erro) });
       }
     },
-    [],
+    [modoDemonstracao],
   );
 
   const tentarDeNovo = useCallback(() => {
@@ -146,6 +153,7 @@ export function useGeracaoRoteiro() {
     preferencias,
     candidatos,
     aviso,
+    modoDemonstracao,
     podeEncurtar: opcoes.maisCurto !== null,
     podeEconomizar: opcoes.maisEconomico !== null,
     gerar,

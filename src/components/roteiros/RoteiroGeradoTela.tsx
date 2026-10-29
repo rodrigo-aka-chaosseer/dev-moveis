@@ -25,18 +25,28 @@ const TITULO_GERANDO: Record<MotivoGeracao, string> = {
   acessibilidade: "Priorizando acessibilidade…",
 };
 
-export function GerandoRoteiro({ motivo, cidadeId }: { motivo: MotivoGeracao; cidadeId: PreferenciasRecomendacao["cidadeId"] | null }) {
+export function GerandoRoteiro({
+  motivo,
+  cidadeId,
+  demonstracao,
+}: {
+  motivo: MotivoGeracao;
+  cidadeId: PreferenciasRecomendacao["cidadeId"] | null;
+  demonstracao: boolean;
+}) {
   const cidade = nomeCidade(cidadeId)?.split(",")[0];
   return (
     <View style={{ gap: 12 }}>
       <Estado
         carregando
         titulo={TITULO_GERANDO[motivo]}
-        descricao={`A IA escolhe entre os lugares curados${cidade ? ` de ${cidade}` : ""} e explica cada parada. Pode levar até meio minuto.`}
+        descricao={demonstracao
+          ? `O modo de demonstração escolhe entre os lugares curados${cidade ? ` de ${cidade}` : ""} sem chamar um modelo de IA.`
+          : `A IA escolhe entre os lugares curados${cidade ? ` de ${cidade}` : ""} e explica cada parada. Pode levar até meio minuto.`}
       />
       <View style={s.selo} accessibilityElementsHidden>
-        <Ionicons name="sparkles-outline" size={14} color={colors.accentDark} />
-        <Text style={s.seloTexto}>Sugestão gerada por IA</Text>
+        <Ionicons name={demonstracao ? "flask-outline" : "sparkles-outline"} size={14} color={colors.accentDark} />
+        <Text style={s.seloTexto}>{demonstracao ? "Modo demonstração local" : "Sugestão gerada por IA"}</Text>
       </View>
     </View>
   );
@@ -99,8 +109,10 @@ export function ResultadoRoteiro({
     <View style={{ gap: 18 }}>
       <View style={s.selos}>
         <View style={s.selo}>
-          <Ionicons name="sparkles-outline" size={14} color={colors.accentDark} />
-          <Text style={s.seloTexto}>Sugestão gerada por IA</Text>
+          <Ionicons name={roteiro.origem === "ia" ? "sparkles-outline" : "flask-outline"} size={14} color={colors.accentDark} />
+          <Text style={s.seloTexto}>
+            {roteiro.origem === "ia" ? "Sugestão gerada por IA" : "Modo demonstração local"}
+          </Text>
         </View>
         {roteiro.ajustado ? (
           <View style={[s.selo, { backgroundColor: colors.paper }]}>
@@ -158,7 +170,7 @@ export function ResultadoRoteiro({
       <View style={v.bloco}>
         <Text style={v.secaoTitulo}>Ajustar o roteiro</Text>
         <Text style={v.descricao}>
-          Cidade, interesses e as outras escolhas continuam as mesmas. Cada ajuste pede uma nova sugestão à IA.
+          Cidade, interesses e as outras escolhas continuam as mesmas. Cada ajuste monta uma nova sugestão {roteiro.origem === "ia" ? "com a IA" : "localmente"}.
         </Text>
         <Ajuste icone="time-outline" texto="Mais curto" ajuda={podeEncurtar ? undefined : "Já está no tempo mínimo de 1 hora."} onPress={onMaisCurto} disabled={!podeEncurtar} />
         <Ajuste icone="wallet-outline" texto="Mais econômico" ajuda={podeEconomizar ? undefined : "Este roteiro já é gratuito."} onPress={onMaisEconomico} disabled={!podeEconomizar} />
@@ -247,7 +259,13 @@ function CartaoParada({
           </Pressable>
 
           <View style={{ gap: 4 }}>
-            <Text style={s.rotuloMotivo}>{parada.origem === "ia" ? "Por que a IA sugeriu" : "Por que conhecer"}</Text>
+            <Text style={s.rotuloMotivo}>
+              {parada.origem === "ia"
+                ? "Por que a IA sugeriu"
+                : parada.origem === "demonstracao"
+                  ? "Por que foi sugerido"
+                  : "Por que conhecer"}
+            </Text>
             <Text style={[v.descricao, { color: colors.earth }]}>{parada.motivo}</Text>
           </View>
 
