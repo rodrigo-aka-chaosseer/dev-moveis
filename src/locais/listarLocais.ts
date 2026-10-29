@@ -55,6 +55,29 @@ export async function listarLocais(cidadeId: CidadeId): Promise<LocalLista[]> {
     .map((linha) => mapearLocal(linha, cidadeId));
 }
 
+/**
+ * Catálogo publicado com os dados necessários para preparar uma recomendação.
+ * Continua usando a consulta pública (`arquivado_em is null`), mas inclui as
+ * relações 1:1 de acessibilidade em uma única ida ao banco.
+ */
+export async function listarLocaisDetalhados(cidadeId: CidadeId): Promise<LocalDetalhe[]> {
+  if (!supabaseUrlDefinida()) {
+    const lista = await listarDoMock(cidadeId);
+    return lista.map((local) => ({
+      ...local,
+      acessibilidade: ACESSIBILIDADE_DESCONHECIDA,
+      ambienteSensorial: null,
+    }));
+  }
+
+  const { data, error } = await consultaPublica(SELECT_DETALHE);
+  if (error) throw error;
+
+  return (Array.isArray(data) ? data : [])
+    .filter((linha): linha is LinhaLocal => naCidade(linha, cidadeId))
+    .map((linha) => mapearDetalhe(linha, cidadeId));
+}
+
 export async function buscarLocalPorId(id: string): Promise<LocalDetalhe | null> {
   if (!supabaseUrlDefinida()) {
     return buscarDoMock(id);
@@ -63,11 +86,7 @@ export async function buscarLocalPorId(id: string): Promise<LocalDetalhe | null>
   const { data, error } = await consultaPublica(SELECT_DETALHE).eq("id", id).maybeSingle();
   if (error) throw error;
   if (!data || !ehLinhaLocal(data)) return null;
-  return {
-    ...mapearLocal(data, cidadeDoLocal(data)),
-    acessibilidade: lerAcessibilidade(data.acessibilidade),
-    ambienteSensorial: lerAmbienteSensorial(data.ambiente_sensorial),
-  };
+  return mapearDetalhe(data, cidadeDoLocal(data));
 }
 
 async function listarDoMock(cidadeId: CidadeId): Promise<LocalLista[]> {
@@ -191,6 +210,14 @@ function mapearLocal(linha: LinhaLocal, cidadeId: CidadeId): LocalLista {
     audioUrl: linha.audio_url ?? null,
     tags: nomesDasTags(linha.locais_tags),
     distancia: formatarDistancia(km),
+  };
+}
+
+function mapearDetalhe(linha: LinhaLocal, cidadeId: CidadeId): LocalDetalhe {
+  return {
+    ...mapearLocal(linha, cidadeId),
+    acessibilidade: lerAcessibilidade(linha.acessibilidade),
+    ambienteSensorial: lerAmbienteSensorial(linha.ambiente_sensorial),
   };
 }
 
