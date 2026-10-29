@@ -28,6 +28,25 @@ Edge Function supabase/functions/gerar-roteiro/index.ts  (Deno)
 A chave da Anthropic só existe como secret da função. O app nunca vê a chave
 nem fala com a Anthropic.
 
+### Preparação dos candidatos no app
+
+`src/roteiros/ia/prepararCandidatos.ts` transforma cidade, interesses, tempo,
+orçamento, ritmo e acessibilidade em um pedido padronizado. A fonte é
+`listarLocaisDetalhados`: uma única consulta ao catálogo público com
+`arquivado_em is null`, já filtrada pela cidade. Antes da geração, o app:
+
+- relaciona interesses às categorias do catálogo;
+- tira lugares que não cabem no tempo ou cujo preço conhecido passa do teto;
+- espelha as regras de cadeira de rodas, baixa visão e sensibilidade sensorial;
+- mantém avisos de visitação, preço desconhecido e acessibilidade não confirmada;
+- limita a lista a 40 candidatos e registra em cada um `id`, `categoria`,
+  `duracaoMin`, `custoCentavos` e `restricoes`.
+
+Esses metadados permitem testar e explicar a seleção local. Na transmissão,
+`gerarRoteiroIa` remove todos eles e manda somente os ids; a Edge Function
+relê os lugares publicados e repete os filtros de segurança. Sem Supabase o
+catálogo de demonstração pode montar a lista, mas a chamada de IA é recusada.
+
 ## Contrato
 
 Os tipos ficam em `supabase/functions/_shared/roteiroIa.ts` e o app importa
@@ -179,7 +198,8 @@ acessibilidade, mensagem bruta de erro da API.
 
 ## Limites e próximos passos
 
-- **#50** monta os candidatos: ids de `locais` publicados da cidade, até 40.
+- **#50** concluída: prepara até 40 candidatos publicados da cidade em
+  `src/roteiros/ia/prepararCandidatos.ts`.
 - **#53** é o formulário: usa `LIMITES_PEDIDO`, `RITMOS` e
   `NECESSIDADES_ACESSIBILIDADE` reexportados pelo cliente.
 - **#52/#51** exibem e ajustam: `acessibilidadeNaoConfirmada` e `avisos`

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buscarLocalPorId, listarLocais } from "./listarLocais";
+import { buscarLocalPorId, listarLocais, listarLocaisDetalhados } from "./listarLocais";
 
 const supabaseMock = vi.hoisted(() => ({
   cliente: null as { from: ReturnType<typeof vi.fn> } | null,
@@ -111,6 +111,38 @@ describe("listarLocais", () => {
       tags: ["Afro-brasileira"],
     });
     expect(lista[0].atualizadoEm).toEqual(new Date(LINHA_SALVADOR.atualizado_em));
+  });
+
+  it("carrega candidatos publicados com acessibilidade em uma consulta", async () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
+    const { from, builder } = consultaFalsa({
+      data: [{
+        ...LINHA_SALVADOR,
+        acessibilidade: { rampa: "sim" },
+        ambiente_sensorial: {
+          ruido: "baixo",
+          iluminacao: "media",
+          movimentacao: "baixa",
+          tem_fila: false,
+          espaco_descanso: true,
+        },
+      }],
+      error: null,
+    });
+    supabaseMock.cliente = { from };
+
+    const lista = await listarLocaisDetalhados("salvador");
+
+    expect(from).toHaveBeenCalledWith("locais");
+    expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("acessibilidade(*)"));
+    expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("ambiente_sensorial(*)"));
+    expect(builder.is).toHaveBeenCalledWith("arquivado_em", null);
+    expect(lista[0]).toMatchObject({
+      id: LINHA_SALVADOR.id,
+      cidadeId: "salvador",
+      acessibilidade: { rampa: "sim" },
+      ambienteSensorial: { ruido: "baixo" },
+    });
   });
 
   it("filtra por cidade_id quando o painel envia essa coluna", async () => {
