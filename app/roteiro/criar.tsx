@@ -140,7 +140,11 @@ function FormularioRoteiroTela({
         contentContainerStyle={[s.conteudo, { paddingBottom: insets.bottom + 32 }]}
       >
         {estado.fase === "gerando" ? (
-          <GerandoRoteiro motivo={estado.motivo} cidadeId={formulario.cidadeId} />
+          <GerandoRoteiro
+            motivo={estado.motivo}
+            cidadeId={formulario.cidadeId}
+            demonstracao={geracao.modoDemonstracao}
+          />
         ) : estado.fase === "erro" ? (
           <ErroGeracao
             mensagem={estado.mensagem}

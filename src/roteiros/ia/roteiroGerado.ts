@@ -14,8 +14,8 @@ export type ParadaGerada = {
   duracaoMin: number;
   /** Por que a parada está no roteiro: da IA, ou o "por que conhecer" numa troca. */
   motivo: string;
-  /** "ia" quando veio da sugestão; "troca" quando a pessoa trocou a parada. */
-  origem: "ia" | "troca";
+  /** Origem do motivo mostrado para a parada. */
+  origem: "ia" | "demonstracao" | "troca";
   acessibilidadeNaoConfirmada: boolean;
   /** "HH:MM" de 5 em 5 min, a partir das 09:00, como nos roteiros temáticos. */
   horaSugerida: string;
@@ -29,6 +29,7 @@ export type RoteiroGerado = {
   distanciaMetros: number;
   custoCentavos: number | null;
   avisos: string[];
+  origem: "ia" | "demonstracao";
   /** true depois de remover ou trocar uma parada à mão. */
   ajustado: boolean;
 };
@@ -53,7 +54,13 @@ type ParadaBase = Omit<ParadaGerada, "horaSugerida">;
  * cadastrado e nunca o mesmo lugar duas vezes. O servidor já garante isso;
  * aqui é a segunda trava, do lado de quem mostra.
  */
-export function montarRoteiroGerado(ia: RoteiroIa, catalogo: readonly LocalDetalhe[]): RoteiroGerado {
+type SugestaoRoteiro = Omit<RoteiroIa, "geradoPorIa"> & { geradoPorIa: boolean };
+
+export function montarRoteiroGerado(
+  ia: SugestaoRoteiro,
+  catalogo: readonly LocalDetalhe[],
+): RoteiroGerado {
+  const origem = ia.geradoPorIa ? "ia" : "demonstracao";
   const porId = new Map(catalogo.map((local) => [local.id, local]));
   const vistos = new Set<string>();
   const paradas: ParadaBase[] = [];
@@ -66,7 +73,7 @@ export function montarRoteiroGerado(ia: RoteiroIa, catalogo: readonly LocalDetal
       local,
       duracaoMin: parada.duracaoMin,
       motivo: parada.justificativa,
-      origem: "ia",
+      origem,
       acessibilidadeNaoConfirmada: parada.acessibilidadeNaoConfirmada,
     });
   }
@@ -84,10 +91,11 @@ export function montarRoteiroGerado(ia: RoteiroIa, catalogo: readonly LocalDetal
       distanciaMetros: ia.distanciaMetros,
       custoCentavos: ia.custoCentavos,
       avisos: ia.avisos,
+      origem,
       ajustado: false,
     };
   }
-  return recalcular({ titulo: ia.titulo, descricao: ia.descricao, ajustado: false }, paradas);
+  return recalcular({ titulo: ia.titulo, descricao: ia.descricao, origem, ajustado: false }, paradas);
 }
 
 /** Tira uma parada. Não deixa o roteiro ficar vazio. */
@@ -213,7 +221,7 @@ export function pedidoComAcessibilidade(
 // ────────────────────────────────────────────────────────────────────────
 
 function recalcular(
-  base: Pick<RoteiroGerado, "titulo" | "descricao" | "ajustado">,
+  base: Pick<RoteiroGerado, "titulo" | "descricao" | "origem" | "ajustado">,
   paradas: ParadaBase[],
 ): RoteiroGerado {
   const totais = calcularParadas(paradas);

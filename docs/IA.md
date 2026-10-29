@@ -198,6 +198,16 @@ acessibilidade, mensagem bruta de erro da API.
 
 ## Limites e próximos passos
 
+### Modo de demonstração local
+
+Enquanto o Supabase não está configurado, o app usa automaticamente
+`src/roteiros/ia/gerarRoteiroDemonstracao.ts`. Esse fallback não chama um
+modelo de IA: ele monta uma sugestão determinística somente com os candidatos
+já filtrados por cidade, interesses, tempo, orçamento e acessibilidade. A tela
+identifica o resultado como **Modo demonstração local**. Definir
+`EXPO_PUBLIC_MODO_IA_DEMO=true` força esse modo mesmo quando o Supabase existe;
+com Supabase configurado e a variável ausente ou `false`, vale a Edge Function.
+
 - **#50** concluída: prepara até 40 candidatos publicados da cidade em
   `src/roteiros/ia/prepararCandidatos.ts`.
 - **#53** é o formulário: usa `LIMITES_PEDIDO`, `RITMOS` e
