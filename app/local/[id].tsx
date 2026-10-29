@@ -2,6 +2,7 @@ import { fotosLocais } from "../../src/mocks/fotos";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SecaoAcessibilidade, SecaoAmbienteSensorial } from "../../src/components/local/SecoesAcessibilidade";
 import { Tela, Botao, Capa, Estado, Secao, v } from "../../src/components/visual/Guia";
 import { useLocal } from "../../src/locais/useLocais";
 import { rotuloCategoria, rotuloFonte, rotuloHorarios, rotuloPreco, rotuloTempo } from "../../src/locais/listarLocais";
@@ -28,6 +29,8 @@ export default function DetalheLocal() {
     ] as const).map(([icone, texto]) => <View key={icone} style={s.fato}><Ionicons name={icone} size={22} color={colors.accentDark} /><Text style={s.fatoTexto}>{texto}</Text></View>)}</View>
     <View style={[v.bloco, { backgroundColor: colors.paper }]}><Ionicons name="sparkles-outline" size={23} color={colors.accentDark} /><Text style={v.secaoTitulo}>Por que vale conhecer</Text><Text style={[v.descricao, { color: colors.earth }]}>{lugar.porQueConhecer}</Text></View>
     {lugar.avisoVisitacao ? <View style={v.bloco}><Text style={v.secaoTitulo}>Antes de visitar</Text><Text style={v.descricao}>{lugar.avisoVisitacao}</Text></View> : null}
+    <SecaoAcessibilidade acessibilidade={local.acessibilidade} />
+    <SecaoAmbienteSensorial ambiente={local.ambienteSensorial} />
     <Secao titulo="Histórias que ficam" /><Text style={s.historia}>{lugar.historia}</Text>
     <View style={v.bloco}><Text style={v.secaoTitulo}>Planeje sua visita</Text><Text style={v.descricao}>{rotuloHorarios(lugar) || "Horários não informados. Consulte a fonte antes de visitar."}</Text><Text style={v.descricao}>{lugar.distancia} · em linha reta</Text><Botao texto="Explorar o mapa" secundario onPress={() => router.push("/(tabs)/mapa")} /></View>
     {lugar.tags.length ? <View style={v.etiquetas}>{lugar.tags.map((tag) => <View key={tag} style={v.etiqueta}><Text style={v.etiquetaTexto}>{tag}</Text></View>)}</View> : null}

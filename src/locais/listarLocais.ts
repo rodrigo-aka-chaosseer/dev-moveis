@@ -1,3 +1,10 @@
+import {
+  ACESSIBILIDADE_DESCONHECIDA,
+  lerAcessibilidade,
+  lerAmbienteSensorial,
+  type Acessibilidade,
+  type AmbienteSensorial,
+} from "./acessibilidade";
 import { distanciaKm, formatarDistancia } from "./distancia";
 import { supabase } from "../lib/supabase";
 import { locais, type LocalLista } from "../mocks/locais";
@@ -6,6 +13,15 @@ import { CIDADES, type CidadeId } from "../preferencias/dados";
 const ATRASO_MS = 250;
 const RAIO_CIDADE_KM = 30;
 export const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome))";
+// Só o detalhe precisa das tabelas 1:1; a lista continua leve.
+const SELECT_DETALHE = `${SELECT_LOCAL}, acessibilidade(*), ambiente_sensorial(*)`;
+
+/** O lugar como a tela de detalhe mostra: com acessibilidade e ambiente. */
+export type LocalDetalhe = LocalLista & {
+  acessibilidade: Acessibilidade;
+  /** `null` quando o ambiente sensorial ainda não foi informado. */
+  ambienteSensorial: AmbienteSensorial | null;
+};
 
 const ROTULOS_CATEGORIA: Record<LocalLista["categoria"], string> = {
   gastronomia: "Gastronomia",
@@ -39,15 +55,19 @@ export async function listarLocais(cidadeId: CidadeId): Promise<LocalLista[]> {
     .map((linha) => mapearLocal(linha, cidadeId));
 }
 
-export async function buscarLocalPorId(id: string): Promise<LocalLista | null> {
+export async function buscarLocalPorId(id: string): Promise<LocalDetalhe | null> {
   if (!supabaseUrlDefinida()) {
     return buscarDoMock(id);
   }
 
-  const { data, error } = await consultaPublica().eq("id", id).maybeSingle();
+  const { data, error } = await consultaPublica(SELECT_DETALHE).eq("id", id).maybeSingle();
   if (error) throw error;
   if (!data || !ehLinhaLocal(data)) return null;
-  return mapearLocal(data, cidadeDoLocal(data));
+  return {
+    ...mapearLocal(data, cidadeDoLocal(data)),
+    acessibilidade: lerAcessibilidade(data.acessibilidade),
+    ambienteSensorial: lerAmbienteSensorial(data.ambiente_sensorial),
+  };
 }
 
 async function listarDoMock(cidadeId: CidadeId): Promise<LocalLista[]> {
@@ -55,9 +75,14 @@ async function listarDoMock(cidadeId: CidadeId): Promise<LocalLista[]> {
   return locais.filter((local) => local.cidadeId === cidadeId);
 }
 
-async function buscarDoMock(id: string): Promise<LocalLista | null> {
+// Os lugares curados ainda não têm acessibilidade levantada com fonte, então
+// tudo aparece como "não informado". Preencher aqui exige curadoria, não
+// suposição.
+async function buscarDoMock(id: string): Promise<LocalDetalhe | null> {
   if (!process.env.VITEST) await esperar(ATRASO_MS);
-  return locais.find((local) => local.id === id) ?? null;
+  const local = locais.find((item) => item.id === id);
+  if (!local) return null;
+  return { ...local, acessibilidade: ACESSIBILIDADE_DESCONHECIDA, ambienteSensorial: null };
 }
 
 export function supabaseUrlDefinida(): boolean {
@@ -74,11 +99,15 @@ export function linhaParaLocal(valor: unknown): LocalLista | null {
   return mapearLocal(valor, cidadeDoLocal(valor));
 }
 
-function consultaPublica() {
+function consultaPublica(colunas: string = SELECT_LOCAL) {
   if (!supabase) {
     throw new Error("Supabase não configurado.");
   }
-  return supabase.from("locais").select(SELECT_LOCAL).is("arquivado_em", null);
+  // Sem tipos gerados do banco, cada linha é validada por `ehLinhaLocal`.
+  return supabase
+    .from("locais")
+    .select<string, Record<string, unknown>>(colunas)
+    .is("arquivado_em", null);
 }
 
 type LinhaLocal = {
@@ -101,6 +130,8 @@ type LinhaLocal = {
   audio_url?: string | null;
   cidade_id?: string | null;
   locais_tags?: unknown;
+  acessibilidade?: unknown;
+  ambiente_sensorial?: unknown;
 };
 
 function ehLinhaLocal(valor: unknown): valor is LinhaLocal {
