@@ -33,7 +33,7 @@ describe("calcularRoteiro", () => {
 
 describe("roteiros do catálogo local", () => {
   it("toda parada existe e o roteiro fica numa cidade só", () => {
-    for (const roteiro of roteiros) {
+    for (const roteiro of roteiros.filter((item) => item.id !== "demonstracao-parada-indisponivel")) {
       const cidades = new Set(
         roteiro.paradas.map((parada) => porId(parada.localId).cidadeId),
       );
@@ -42,6 +42,11 @@ describe("roteiros do catálogo local", () => {
         roteiro.paradas.map((_, indice) => indice + 1),
       );
     }
+  });
+
+  it("mantém um cenário de demonstração com parada arquivada", () => {
+    const roteiro = roteiros.find((item) => item.id === "demonstracao-parada-indisponivel");
+    expect(roteiro?.paradas.some((parada) => !locais.some((local) => local.id === parada.localId))).toBe(true);
   });
 });
 

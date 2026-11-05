@@ -44,7 +44,7 @@ export type RoteiroMock = {
   paradas: ParadaMock[];
 };
 
-export const roteiros: RoteiroMock[] = ROTEIROS_CURADOS.map((roteiro) => {
+const roteirosCurados: RoteiroMock[] = ROTEIROS_CURADOS.map((roteiro) => {
   const lugares = roteiro.paradas.map((id) => {
     const local = locais.find((item) => item.id === id);
     if (!local) throw new Error(`Roteiro ${roteiro.id} aponta para lugar inexistente: ${id}`);
@@ -67,3 +67,22 @@ export const roteiros: RoteiroMock[] = ROTEIROS_CURADOS.map((roteiro) => {
     })),
   };
 });
+
+/** Cenário sintético para demonstrar uma parada cujo lugar foi arquivado. */
+const ROTEIRO_INDISPONIVEL_DEMONSTRACAO: RoteiroMock = {
+  id: "demonstracao-parada-indisponivel",
+  titulo: "Demonstração: parada indisponível",
+  descricao: "Roteiro de teste para visualizar a recuperação quando um lugar sai do catálogo.",
+  duracaoMin: 105,
+  distanciaMetros: 900,
+  custoCentavos: 0,
+  paradas: [
+    { ordem: 1, localId: "casa-benin", horaSugerida: "09:00", duracaoMin: 60 },
+    { ordem: 2, localId: "local-arquivado-demonstracao", horaSugerida: "10:15", duracaoMin: 45 },
+  ],
+};
+
+export const roteiros: RoteiroMock[] = [
+  ...roteirosCurados,
+  ROTEIRO_INDISPONIVEL_DEMONSTRACAO,
+];

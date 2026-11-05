@@ -9,6 +9,7 @@ import { distanciaKm, formatarDistancia } from "./distancia";
 import { formatarCusto, formatarDuracao } from "../formatos/formatos";
 import { supabase } from "../lib/supabase";
 import { locais, type LocalLista } from "../mocks/locais";
+import { detalhesLocaisDemonstracao } from "../mocks/detalhesLocais";
 import { CIDADES, type CidadeId } from "../preferencias/dados";
 
 const ATRASO_MS = 250;
@@ -65,11 +66,7 @@ export async function listarLocais(cidadeId: CidadeId): Promise<LocalLista[]> {
 export async function listarLocaisDetalhados(cidadeId: CidadeId): Promise<LocalDetalhe[]> {
   if (!supabaseUrlDefinida()) {
     const lista = await listarDoMock(cidadeId);
-    return lista.map((local) => ({
-      ...local,
-      acessibilidade: ACESSIBILIDADE_DESCONHECIDA,
-      ambienteSensorial: null,
-    }));
+    return lista.map(detalharMock);
   }
 
   const { data, error } = await consultaPublica(SELECT_DETALHE);
@@ -93,17 +90,28 @@ export async function buscarLocalPorId(id: string): Promise<LocalDetalhe | null>
 
 async function listarDoMock(cidadeId: CidadeId): Promise<LocalLista[]> {
   if (!process.env.VITEST) await esperar(ATRASO_MS);
-  return locais.filter((local) => local.cidadeId === cidadeId);
+  return locais
+    .filter((local) => local.cidadeId === cidadeId)
+    .map((local) => ({
+      ...local,
+      acessibilidade: detalhesLocaisDemonstracao[local.id]?.acessibilidade,
+    }));
 }
 
-// Os lugares curados ainda não têm acessibilidade levantada com fonte, então
-// tudo aparece como "não informado". Preencher aqui exige curadoria, não
-// suposição.
 async function buscarDoMock(id: string): Promise<LocalDetalhe | null> {
   if (!process.env.VITEST) await esperar(ATRASO_MS);
   const local = locais.find((item) => item.id === id);
   if (!local) return null;
-  return { ...local, acessibilidade: ACESSIBILIDADE_DESCONHECIDA, ambienteSensorial: null };
+  return detalharMock(local);
+}
+
+function detalharMock(local: LocalLista): LocalDetalhe {
+  const demonstracao = detalhesLocaisDemonstracao[local.id];
+  return {
+    ...local,
+    acessibilidade: demonstracao?.acessibilidade ?? ACESSIBILIDADE_DESCONHECIDA,
+    ambienteSensorial: demonstracao?.ambienteSensorial ?? null,
+  };
 }
 
 export function supabaseUrlDefinida(): boolean {
