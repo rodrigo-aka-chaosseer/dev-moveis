@@ -56,6 +56,11 @@ export function useRoteiro(id: string | undefined) {
     roteiro: Roteiro | null;
     erro: string | null;
   } | null>(null);
+  const [tentativa, setTentativa] = useState(0);
+  const recarregar = useCallback(() => {
+    setPedido(null);
+    setTentativa((valor) => valor + 1);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -72,15 +77,16 @@ export function useRoteiro(id: string | undefined) {
     return () => {
       ativo = false;
     };
-  }, [id]);
+  }, [id, tentativa]);
 
   if (!id) {
-    return { roteiro: null, carregando: false, erro: ERRO_UM };
+    return { roteiro: null, carregando: false, erro: ERRO_UM, recarregar };
   }
 
   const desteId = pedido?.id === id;
   return {
     roteiro: desteId ? pedido.roteiro : null,
+    recarregar,
     carregando: !desteId,
     erro: desteId ? pedido.erro : null,
   };

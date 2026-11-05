@@ -7,7 +7,7 @@ import { useRouter, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { fotosLocais } from "../../mocks/fotos";
 import type { LocalLista } from "../../mocks/locais";
-import { rotuloCategoria, rotuloPreco } from "../../locais/listarLocais";
+import { rotuloCategoria, rotuloPreco, rotuloTempo } from "../../locais/listarLocais";
 import { colors, fonts } from "../../theme/tokens";
 
 type Icone = ComponentProps<typeof Ionicons>["name"];
@@ -50,7 +50,7 @@ export function CartaoLugar({ local }: { local: LocalLista }) {
   const router = useRouter();
   return <Pressable accessibilityRole="button" accessibilityLabel={`Conhecer ${local.nome}`} onPress={() => router.push(`/local/${local.id}` as Href)} style={({ pressed }) => [v.cartao, pressed && { opacity: 0.8 }]}>
     <Capa local={local} /><View style={v.cartaoCorpo}><Text style={v.cartaoTitulo}>{local.nome}</Text><Text numberOfLines={2} style={v.descricao}>{local.porQueConhecer}</Text>
-      <View style={v.meta}><Ionicons name="location-outline" size={14} color={colors.accentDark} /><Text style={v.metaTexto}>{local.distancia.replace(" (aprox. pelo centro da cidade)", " · aprox.")}</Text><Text style={v.preco}>{rotuloPreco(local) || `~${local.tempoMedioMin} min`}</Text></View>
+      <View style={v.meta}><Ionicons name="location-outline" size={14} color={colors.accentDark} /><Text style={v.metaTexto}>{local.distancia.replace(" (aprox. pelo centro da cidade)", " · aprox.")}</Text><Text style={v.preco}>{rotuloPreco(local) || rotuloTempo(local)}</Text></View>
     </View></Pressable>;
 }
 export const v = StyleSheet.create({

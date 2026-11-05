@@ -1,9 +1,11 @@
 import { fotosLocais } from "../../src/mocks/fotos";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { SecaoAcessibilidade, SecaoAmbienteSensorial } from "../../src/components/local/SecoesAcessibilidade";
-import { Tela, Botao, Capa, Estado, Secao, v } from "../../src/components/visual/Guia";
+import { Carregando, ErroCarregar, Vazio } from "../../src/components/visual/Estados";
+import { TituloPagina } from "../../src/components/visual/TituloPagina";
+import { Tela, Botao, Capa, Secao, v } from "../../src/components/visual/Guia";
 import { useLocal } from "../../src/locais/useLocais";
 import { rotuloCategoria, rotuloFonte, rotuloHorarios, rotuloPreco, rotuloTempo } from "../../src/locais/listarLocais";
 import { ordenarPorProximidade } from "../../src/locais/proximidade";
@@ -13,13 +15,16 @@ import { colors, fonts } from "../../src/theme/tokens";
 export default function DetalheLocal() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { local, carregando, erro } = useLocal(Array.isArray(id) ? id[0] : id);
+  const { local, carregando, erro, recarregar } = useLocal(Array.isArray(id) ? id[0] : id);
   const { coordenadas } = useLocalizacao();
   const voltar = () => { if (router.canGoBack()) router.back(); else router.replace("/(tabs)/explorar"); };
-  if (carregando) return <Tela><Estado titulo="Preparando essa descoberta…" carregando /></Tela>;
-  if (erro || !local) return <Tela><Estado titulo="Lugar indisponível" descricao={erro ?? "Este lugar não está mais disponível no catálogo."} /><Botao texto="Voltar a explorar" onPress={voltar} /></Tela>;
+  if (carregando) return <Tela><Carregando titulo="Preparando essa descoberta…" /></Tela>;
+  if (erro) return <Tela><ErroCarregar mensagem={erro} onTentarDeNovo={recarregar} secundaria={{ texto: "Voltar a explorar", onPress: voltar }} /></Tela>;
+  if (!local) return <Tela><Vazio icone="location-outline" titulo="Lugar indisponível" mensagem="Este lugar não está mais disponível no catálogo." acao={{ texto: "Voltar a explorar", onPress: voltar }} /></Tela>;
   const lugar = ordenarPorProximidade([local], local.cidadeId, coordenadas)[0];
   return <Tela>
+    <Stack.Screen options={{ title: lugar.nome }} />
+    <TituloPagina titulo={lugar.nome} />
     <View style={s.topo}><Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={voltar} style={s.voltar}><Ionicons name="arrow-back" size={22} color={colors.earth} /></Pressable><Text style={v.legenda}>UMA NOVA DESCOBERTA</Text><Ionicons name="compass-outline" size={22} color={colors.earth} /></View>
     <View style={s.capa}><Capa local={lugar} grande /></View>
     <Text style={v.legenda}>{rotuloCategoria(lugar.categoria)}</Text><Text accessibilityRole="header" style={v.titulo}>{lugar.nome}</Text>

@@ -6,6 +6,7 @@ import {
   type AmbienteSensorial,
 } from "./acessibilidade";
 import { distanciaKm, formatarDistancia } from "./distancia";
+import { formatarCusto, formatarDuracao } from "../formatos/formatos";
 import { supabase } from "../lib/supabase";
 import { locais, type LocalLista } from "../mocks/locais";
 import { CIDADES, type CidadeId } from "../preferencias/dados";
@@ -267,11 +268,11 @@ export function rotuloPreco(local: LocalLista) {
   if (local.precoCentavos == null) {
     return "";
   }
-  return `R$ ${(local.precoCentavos / 100).toFixed(0)}`;
+  return formatarCusto(local.precoCentavos);
 }
 
 export function rotuloTempo(local: LocalLista) {
-  return `~${local.tempoMedioMin} min`;
+  return `~${formatarDuracao(local.tempoMedioMin)}`;
 }
 
 export function rotuloHorarios(local: LocalLista) {

@@ -4,14 +4,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Tela, Cabecalho, Botao, Secao, v } from "../../src/components/visual/Guia";
 import { usePreferencias } from "../../src/preferencias/PreferenciasProvider";
-import { INTERESSES, nomeCidade } from "../../src/preferencias/dados";
+import { SeletorCidade } from "../../src/components/cidade/SeletorCidade";
+import { INTERESSES } from "../../src/preferencias/dados";
 import { useSessao } from "../../src/sessao/SessaoProvider";
 import { colors, fonts } from "../../src/theme/tokens";
 
 export default function Perfil() {
   const router = useRouter();
   const { estado, nome, email, sair } = useSessao();
-  const { cidadeId, interesses, pronto, erro } = usePreferencias();
+  const { interesses, erro } = usePreferencias();
   const [saindo, setSaindo] = useState(false);
   const [erroSaida, setErroSaida] = useState<string | null>(null);
   const identificado = estado === "identificado";
@@ -27,9 +28,7 @@ export default function Perfil() {
     {!identificado ? <View style={s.convite}><Ionicons name="sparkles-outline" size={24} color={colors.accentDark} /><Text style={v.secaoTitulo}>Guarde suas descobertas</Text><Text style={v.descricao}>Crie seu acesso para continuar sua jornada cultural.</Text><Botao texto="Entrar ou criar conta" onPress={() => router.push("/login")} /></View> : null}
     <Secao titulo="Suas preferências" />
     <View style={v.bloco}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Editar cidade e interesses" onPress={() => router.push("/onboarding")} style={s.linha}>
-        <View style={s.icone}><Ionicons name="location-outline" size={22} color={colors.accentDark} /></View><View style={{ flex: 1, gap: 3 }}><Text style={v.descricao}>Cidade para explorar</Text><Text style={s.valor}>{pronto ? nomeCidade(cidadeId) ?? "Escolha sua cidade" : "Carregando…"}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-      </Pressable>
+      <SeletorCidade variante="linha" />
       <View style={s.divisor} /><Text style={v.descricao}>O que desperta sua curiosidade</Text>
       <View style={v.etiquetas}>{INTERESSES.filter((item) => interesses.includes(item.id)).map((item) => <View key={item.id} style={[v.etiqueta, { backgroundColor: colors.surface2 }]}><Text style={v.etiquetaTexto}>{item.icone}  {item.nome}</Text></View>)}</View>
       <Pressable accessibilityRole="button" style={s.editar} onPress={() => router.push("/onboarding")}><Ionicons name="options-outline" size={18} color={colors.accentDark} /><Text style={v.link}>{interesses.length ? "Editar preferências" : "Escolher meus interesses"}</Text></Pressable>

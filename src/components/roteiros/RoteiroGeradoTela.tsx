@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 
 import type { LocalDetalhe } from "../../locais/listarLocais";
-import { rotuloCategoria } from "../../locais/listarLocais";
+import { rotuloCategoria, rotuloTempo } from "../../locais/listarLocais";
 import { nomeCidade } from "../../preferencias/dados";
 import { rotuloDuracao } from "../../roteiros/calculos";
 import { OPCOES_ACESSIBILIDADE } from "../../roteiros/formulario";
@@ -316,7 +316,7 @@ function CartaoParada({
                     <FotoParada local={opcao} tamanho={40} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={s.nomeTroca} numberOfLines={1}>{opcao.nome}</Text>
-                      <Text style={[v.descricao, { fontSize: 11 }]}>{rotuloCategoria(opcao.categoria)} · ~{opcao.tempoMedioMin} min</Text>
+                      <Text style={[v.descricao, { fontSize: 11 }]}>{rotuloCategoria(opcao.categoria)} · {rotuloTempo(opcao)}</Text>
                     </View>
                     <Text style={v.link}>Usar</Text>
                   </Pressable>

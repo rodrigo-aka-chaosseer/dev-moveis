@@ -106,6 +106,8 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
   function escolherCidade(id: CidadeId) {
     if (!pronto) return;
     atualizar({ ...atual.current, cidadeId: id });
+    // A cidade agora muda fora do onboarding (H3): sincroniza como os interesses.
+    sincronizador.aoAlterar();
   }
 
   async function concluirOnboarding() {

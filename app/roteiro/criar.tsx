@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
-import { Botao } from "../../src/components/visual/Guia";
+import { Botao, v } from "../../src/components/visual/Guia";
 import {
   ErroGeracao,
   GerandoRoteiro,
@@ -116,29 +116,27 @@ function FormularioRoteiroTela({
   return (
     <View style={s.tela}>
       <StatusBar style="dark" />
-      <View style={[s.topo, { paddingTop: insets.top + 8 }]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={noFormulario ? "Voltar para Roteiros" : "Voltar para as preferências"}
-          hitSlop={8}
-          onPress={() => (noFormulario ? router.back() : geracao.voltarAoFormulario())}
-          style={({ pressed }) => [s.voltar, pressed && s.pressionado]}
-        >
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </Pressable>
-        <View style={s.topoTexto}>
-          <Text style={s.legenda}>ROTEIRO PERSONALIZADO</Text>
-          <Text accessibilityRole="header" style={s.titulo}>
-            {noFormulario ? "Crie seu passeio com IA" : "Seu roteiro sugerido"}
-          </Text>
-        </View>
-      </View>
-
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.conteudo, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[s.conteudo, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 }]}
       >
+        {/* Mesmo topo do detalhe do lugar e do roteiro: voltar redondo,
+            legenda no centro e o título grande no conteúdo. */}
+        <View style={s.topo}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={noFormulario ? "Voltar para Roteiros" : "Voltar para as preferências"}
+            hitSlop={8}
+            onPress={() => (noFormulario ? router.back() : geracao.voltarAoFormulario())}
+            style={({ pressed }) => [s.voltar, pressed && s.pressionado]}
+          >
+            <Ionicons name="arrow-back" size={22} color={colors.earth} />
+          </Pressable>
+          <Text style={v.legenda}>{noFormulario ? "ROTEIRO PERSONALIZADO" : "SEU ROTEIRO SUGERIDO"}</Text>
+          <Ionicons name="sparkles-outline" size={22} color={colors.earth} />
+        </View>
+
         {estado.fase === "gerando" ? (
           <GerandoRoteiro
             motivo={estado.motivo}
@@ -169,9 +167,12 @@ function FormularioRoteiroTela({
           />
         ) : (
         <>
-        <Text style={s.introducao}>
-          Conte como você quer explorar a cidade. Suas escolhas do início já aparecem aqui e podem ser ajustadas só para este roteiro.
-        </Text>
+        <View style={v.cabecalho}>
+          <Text accessibilityRole="header" style={v.titulo}>Crie seu passeio com IA</Text>
+          <Text style={v.descricao}>
+            Conte como você quer explorar a cidade. Suas escolhas do início já aparecem aqui e podem ser ajustadas só para este roteiro.
+          </Text>
+        </View>
 
             <Secao titulo="Cidade" descricao="Escolha onde será o passeio." obrigatorio icone="location-outline">
               <View style={s.opcoesLinha}>
@@ -368,29 +369,9 @@ function OpcaoDetalhada({
 
 const s = StyleSheet.create({
   tela: { flex: 1, backgroundColor: colors.surface2 },
-  topo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: spacing.pageX,
-    paddingBottom: 14,
-    backgroundColor: colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.surface3,
-  },
-  voltar: {
-    width: MIN_TOUCH,
-    height: MIN_TOUCH,
-    borderRadius: MIN_TOUCH / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.accentSoft,
-  },
-  topoTexto: { flex: 1, gap: 3 },
-  legenda: { fontFamily: fonts.semibold, fontSize: 9, letterSpacing: 1.5, color: colors.accentDark },
-  titulo: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 28, color: colors.text },
+  topo: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  voltar: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   conteudo: { padding: spacing.pageX, gap: 18 },
-  introducao: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 22, color: colors.textMuted },
   carregando: { minHeight: 160, alignItems: "center", justifyContent: "center" },
   secao: { padding: 18, gap: 15, borderRadius: radius.card, backgroundColor: colors.surface },
   secaoTituloLinha: { flexDirection: "row", alignItems: "flex-start", gap: 12 },

@@ -9,9 +9,5 @@ export function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: numb
   return 6371 * 2 * Math.atan2(Math.sqrt(limitado), Math.sqrt(1 - limitado));
 }
 
-export function formatarDistancia(km: number): string {
-  if (km < 1) {
-    return `${Math.round(km * 1000)} m`;
-  }
-  return `${km.toFixed(1).replace(".", ",")} km`;
-}
+/** Mantida para quem já importa daqui; a regra mora em src/formatos. */
+export { formatarDistanciaKm as formatarDistancia } from "../formatos/formatos";

@@ -60,6 +60,11 @@ export function useLocal(id: string | undefined) {
     local: LocalDetalhe | null;
     erro: string | null;
   } | null>(null);
+  const [tentativa, setTentativa] = useState(0);
+  const recarregar = useCallback(() => {
+    setPedido(null);
+    setTentativa((valor) => valor + 1);
+  }, []);
 
   useEffect(() => {
     if (!id) {
@@ -81,16 +86,17 @@ export function useLocal(id: string | undefined) {
     return () => {
       ativo = false;
     };
-  }, [id]);
+  }, [id, tentativa]);
 
   if (!id) {
-    return { local: null, carregando: false, erro: ERRO_UM };
+    return { local: null, carregando: false, erro: ERRO_UM, recarregar };
   }
 
   const desteId = pedido?.id === id;
 
   return {
     local: desteId ? pedido.local : null,
+    recarregar,
     carregando: !desteId,
     erro: desteId ? pedido.erro : null,
   };
