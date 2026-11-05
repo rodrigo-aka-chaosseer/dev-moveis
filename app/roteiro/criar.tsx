@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useRef, useState, type ComponentProps, type ReactNode } from "react";
 import {
   Pressable,
   ScrollView,
@@ -88,6 +88,7 @@ function FormularioRoteiroTela({
     interesses: [...interessesIniciais],
   }));
   const geracao = useGeracaoRoteiro();
+  const gerandoRef = useRef(false);
   const { estado } = geracao;
   const valido = formularioRoteiroValido(formulario);
   const noFormulario = estado.fase === "parado";
@@ -111,6 +112,16 @@ function FormularioRoteiroTela({
       ? formulario.acessibilidade.filter((item) => item !== id)
       : [...formulario.acessibilidade, id];
     atualizar("acessibilidade", acessibilidade);
+  }
+
+  async function gerar() {
+    if (!formulario.cidadeId || !valido || gerandoRef.current) return;
+    gerandoRef.current = true;
+    try {
+      await geracao.gerar({ ...formulario, cidadeId: formulario.cidadeId });
+    } finally {
+      gerandoRef.current = false;
+    }
   }
 
   return (
@@ -265,10 +276,7 @@ function FormularioRoteiroTela({
             <Botao
               texto="Gerar meu roteiro"
               disabled={!valido}
-              onPress={() => {
-                if (!formulario.cidadeId) return;
-                void geracao.gerar({ ...formulario, cidadeId: formulario.cidadeId });
-              }}
+              onPress={() => { void gerar(); }}
             />
         </>
         )}

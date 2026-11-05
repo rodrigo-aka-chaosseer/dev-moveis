@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -29,14 +29,17 @@ export default function Onboarding() {
   } = usePreferencias();
   const [etapa, setEtapa] = useState<1 | 2>(1);
   const [continuando, setContinuando] = useState(false);
+  const continuandoRef = useRef(false);
   const [erroContinuar, setErroContinuar] = useState<string | null>(null);
 
   async function continuar() {
     if (etapa === 1) {
+      if (interesses.length === 0) return;
       setEtapa(2);
       return;
     }
-    if (!cidadeId || continuando) return;
+    if (!cidadeId || interesses.length === 0 || continuandoRef.current) return;
+    continuandoRef.current = true;
     setContinuando(true);
     setErroContinuar(null);
     try {
@@ -47,6 +50,7 @@ export default function Onboarding() {
       router.replace(destino);
     } catch {
       setErroContinuar("Não foi possível salvar a cidade. Tente novamente.");
+      continuandoRef.current = false;
       setContinuando(false);
     }
   }
@@ -166,6 +170,11 @@ export default function Onboarding() {
         <Text accessibilityLiveRegion="polite" style={styles.summary}>
           {resumo}
         </Text>
+        {quantidade === 0 ? (
+          <Text accessibilityRole="alert" style={styles.validation}>
+            Escolha pelo menos um interesse para continuar.
+          </Text>
+        ) : null}
         {quantidade > 0 && (
           <Text style={styles.selectedList}>
             {INTERESSES.filter((item) => interesses.includes(item.id)).map((item) => item.nome).join(" · ")}
@@ -190,10 +199,10 @@ export default function Onboarding() {
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ disabled: !pronto || (etapa === 2 && !cidadeId) || continuando }}
-          disabled={!pronto || (etapa === 2 && !cidadeId) || continuando}
+          accessibilityState={{ disabled: !pronto || quantidade === 0 || (etapa === 2 && !cidadeId) || continuando }}
+          disabled={!pronto || quantidade === 0 || (etapa === 2 && !cidadeId) || continuando}
           onPress={continuar}
-          style={[styles.futureButton, (!pronto || (etapa === 2 && !cidadeId)) && styles.buttonDisabled]}
+          style={[styles.futureButton, (!pronto || quantidade === 0 || (etapa === 2 && !cidadeId) || continuando) && styles.buttonDisabled]}
         >
           <Text style={styles.futureButtonLabel}>{etapa === 1 ? "Continuar" : "Explorar cidade"}</Text>
         </Pressable>
@@ -377,6 +386,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     color: colors.text,
+  },
+  validation: {
+    marginTop: 8,
+    textAlign: "center",
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    color: colors.error,
   },
   error: { marginTop: 16, fontFamily: fonts.semibold, fontSize: 13, color: colors.error },
   footer: {

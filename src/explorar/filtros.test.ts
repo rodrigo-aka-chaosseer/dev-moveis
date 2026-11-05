@@ -13,17 +13,39 @@ describe("filtros do Explorar", () => {
   });
 
   it("interesse e busca sem acento se somam", () => {
-    const filtros = { interesse: "historia" as const, busca: "afro" };
+    const filtros = { ...SEM_FILTROS, interesse: "historia" as const, busca: "afro" };
     expect(filtrarExplorar(salvador, filtros).map((local) => local.id)).toEqual(["mafro-ufba"]);
     expect(temFiltro(filtros)).toBe(true);
     expect(descreverFiltros(filtros)).toEqual(["História", "“afro”"]);
   });
 
   it("filtro sem resultado devolve lista vazia", () => {
-    expect(filtrarExplorar(salvador, { interesse: "natureza", busca: "" })).toEqual([]);
+    expect(filtrarExplorar(salvador, { ...SEM_FILTROS, interesse: "natureza" })).toEqual([]);
   });
 
   it("busca só com espaços não conta como filtro", () => {
-    expect(temFiltro({ interesse: null, busca: "   " })).toBe(false);
+    expect(temFiltro({ ...SEM_FILTROS, busca: "   " })).toBe(false);
+  });
+
+  it("combina gratuidade e acessibilidade", () => {
+    const acessivel = {
+      ...salvador[0],
+      gratuito: true,
+      acessibilidade: {
+        rampa: "sim" as const,
+        elevador: "desconhecido" as const,
+        banheiroAcessivel: "desconhecido" as const,
+        libras: "desconhecido" as const,
+        braille: "desconhecido" as const,
+        audiodescricao: "desconhecido" as const,
+      },
+    };
+    expect(filtrarExplorar([acessivel, salvador[1]], {
+      ...SEM_FILTROS,
+      gratuito: true,
+      acessivel: true,
+    })).toEqual([acessivel]);
+    expect(descreverFiltros({ ...SEM_FILTROS, gratuito: true, acessivel: true }))
+      .toEqual(["entrada gratuita", "acessibilidade informada"]);
   });
 });

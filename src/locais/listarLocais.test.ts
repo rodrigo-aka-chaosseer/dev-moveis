@@ -275,7 +275,7 @@ describe("buscarLocalPorId", () => {
     expect(local?.ambienteSensorial).toBeNull();
   });
 
-  it("a lista não pede as tabelas do detalhe", async () => {
+  it("a lista pede acessibilidade para alimentar o filtro rápido", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
     const { from, builder } = consultaFalsa({ data: [], error: null });
     supabaseMock.cliente = { from };
@@ -283,7 +283,7 @@ describe("buscarLocalPorId", () => {
     await listarLocais("salvador");
 
     expect(builder.select).toHaveBeenCalledTimes(1);
-    expect(builder.select).not.toHaveBeenCalledWith(expect.stringContaining("acessibilidade"));
+    expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("acessibilidade"));
   });
 
   it("devolve null quando o lugar não existe ou está arquivado", async () => {

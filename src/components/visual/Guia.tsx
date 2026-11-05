@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +7,8 @@ import { useRouter, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { fotosLocais } from "../../mocks/fotos";
 import type { LocalLista } from "../../mocks/locais";
+import { interessesQueCombinam } from "../../preferencias/afinidade";
+import { INTERESSES, type InteresseId } from "../../preferencias/dados";
 import { rotuloCategoria, rotuloPreco, rotuloTempo } from "../../locais/listarLocais";
 import { colors, fonts } from "../../theme/tokens";
 
@@ -16,9 +18,10 @@ export const iconesCategoria: Record<string, Icone> = {
   gastronomia: "restaurant-outline", musica: "musical-notes-outline", arte: "color-palette-outline",
   religiao: "sunny-outline", comunidade: "people-outline", natureza: "leaf-outline", evento: "calendar-outline",
 };
-export function Tela({ children, fundo }: { children: ReactNode; fundo?: string }) {
+export function Tela({ children, fundo, refreshing = false, onRefresh }: { children: ReactNode; fundo?: string; refreshing?: boolean; onRefresh?: () => void }) {
   const insets = useSafeAreaInsets();
   return <><StatusBar style="dark" /><ScrollView style={[v.tela, fundo ? { backgroundColor: fundo } : undefined]} showsVerticalScrollIndicator={false}
+    refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} /> : undefined}
     contentContainerStyle={[v.conteudo, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 }]}>{children}</ScrollView></>;
 }
 export function Cabecalho({ legenda, titulo, descricao }: { legenda: string; titulo: string; descricao?: string }) {
@@ -46,10 +49,12 @@ export function Capa({ local, grande = false }: { local: LocalLista; grande?: bo
     <View style={v.categoria}><Text style={v.categoriaTexto}>{rotuloCategoria(local.categoria)}</Text></View>
   </View>;
 }
-export function CartaoLugar({ local }: { local: LocalLista }) {
+export function CartaoLugar({ local, interesses = [] }: { local: LocalLista; interesses?: readonly InteresseId[] }) {
   const router = useRouter();
+  const afinidades = interessesQueCombinam(local, interesses);
   return <Pressable accessibilityRole="button" accessibilityLabel={`Conhecer ${local.nome}`} onPress={() => router.push(`/local/${local.id}` as Href)} style={({ pressed }) => [v.cartao, pressed && { opacity: 0.8 }]}>
     <Capa local={local} /><View style={v.cartaoCorpo}><Text style={v.cartaoTitulo}>{local.nome}</Text><Text numberOfLines={2} style={v.descricao}>{local.porQueConhecer}</Text>
+      {afinidades.length ? <View style={v.afinidades}>{afinidades.map((id) => { const item = INTERESSES.find((interesse) => interesse.id === id); return item ? <View key={id} style={v.afinidade}><Ionicons name="sparkles" size={12} color={colors.accentDark} /><Text style={v.afinidadeTexto}>Combina com {item.nome}</Text></View> : null; })}</View> : null}
       <View style={v.meta}><Ionicons name="location-outline" size={14} color={colors.accentDark} /><Text style={v.metaTexto}>{local.distancia.replace(" (aprox. pelo centro da cidade)", " · aprox.")}</Text><Text style={v.preco}>{rotuloPreco(local) || rotuloTempo(local)}</Text></View>
     </View></Pressable>;
 }
@@ -64,6 +69,7 @@ export const v = StyleSheet.create({
   linkToque: { minHeight: 44, justifyContent: "center" }, link: { fontFamily: fonts.semibold, color: colors.accentDark, fontSize: 12 },
   estado: { padding: 24, alignItems: "center", gap: 12, backgroundColor: colors.surface, borderRadius: 24 }, disco: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentTint },
   cartao: { backgroundColor: colors.surface, borderRadius: 24, overflow: "hidden", marginBottom: 2 }, cartaoCorpo: { padding: 18, gap: 10 }, cartaoTitulo: { fontFamily: fonts.semibold, color: colors.text, fontSize: 19, letterSpacing: -0.5 },
+  afinidades: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, afinidade: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 18, backgroundColor: colors.accentSoft }, afinidadeTexto: { fontFamily: fonts.semibold, fontSize: 10, color: colors.accentDark },
   capa: { height: 160, backgroundColor: colors.paper, overflow: "hidden" }, ilustracao: { flex: 1, alignItems: "center", justifyContent: "center" },
   orbita: { position: "absolute", width: 230, height: 230, borderWidth: 1, borderColor: colors.stampEmpty, borderRadius: 115, transform: [{ translateX: 90 }, { translateY: 45 }] },
   sol: { position: "absolute", width: 110, height: 110, borderRadius: 55, backgroundColor: colors.accentTint, transform: [{ translateX: -50 }, { translateY: -30 }] },

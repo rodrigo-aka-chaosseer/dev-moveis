@@ -111,8 +111,8 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
   }
 
   async function concluirOnboarding() {
-    if (!pronto || atual.current.cidadeId === null) {
-      throw new Error("Onboarding sem cidade escolhida.");
+    if (!pronto || atual.current.cidadeId === null || atual.current.interesses.length === 0) {
+      throw new Error("Onboarding sem cidade ou interesse escolhido.");
     }
     atualizar({ ...atual.current, onboardingConcluido: true });
     // Melhor esforço: não espera o servidor nem falha por causa dele.

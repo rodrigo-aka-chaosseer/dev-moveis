@@ -13,9 +13,10 @@ import { CIDADES, type CidadeId } from "../preferencias/dados";
 
 const ATRASO_MS = 250;
 const RAIO_CIDADE_KM = 30;
-export const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome))";
-// Só o detalhe precisa das tabelas 1:1; a lista continua leve.
-const SELECT_DETALHE = `${SELECT_LOCAL}, acessibilidade(*), ambiente_sensorial(*)`;
+export const SELECT_LOCAL = "*, locais_tags(tags_diversidade(nome)), acessibilidade(*)";
+// O detalhe acrescenta apenas os dados sensoriais; acessibilidade também
+// alimenta o filtro rápido da listagem.
+const SELECT_DETALHE = `${SELECT_LOCAL}, ambiente_sensorial(*)`;
 
 /** O lugar como a tela de detalhe mostra: com acessibilidade e ambiente. */
 export type LocalDetalhe = LocalLista & {
@@ -211,6 +212,7 @@ function mapearLocal(linha: LinhaLocal, cidadeId: CidadeId): LocalLista {
     audioUrl: linha.audio_url ?? null,
     tags: nomesDasTags(linha.locais_tags),
     distancia: formatarDistancia(km),
+    acessibilidade: lerAcessibilidade(linha.acessibilidade),
   };
 }
 
