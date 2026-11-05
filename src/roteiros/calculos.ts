@@ -1,4 +1,5 @@
-import { distanciaKm, formatarDistancia } from "../locais/distancia";
+import { formatarCusto, formatarDistanciaMetros, formatarDuracao } from "../formatos/formatos";
+import { distanciaKm } from "../locais/distancia";
 import type { LocalLista } from "../mocks/locais";
 
 /** Passo de quem caminha olhando a cidade: 4,5 km/h. */
@@ -73,20 +74,16 @@ export function calcularParadas(
 }
 
 export function rotuloDuracao(minutos: number): string {
-  if (minutos < 60) return `${minutos} min`;
-  const horas = Math.floor(minutos / 60);
-  const resto = minutos % 60;
-  return resto ? `${horas}h${String(resto).padStart(2, "0")}` : `${horas}h`;
+  return formatarDuracao(minutos);
 }
 
+/** Nos quatro números do roteiro não cabe "Preço não informado": vira "—". */
 export function rotuloCusto(centavos: number | null): string {
-  if (centavos == null) return "—";
-  if (centavos === 0) return "Gratuito";
-  return `R$ ${Math.round(centavos / 100)}`;
+  return formatarCusto(centavos, "—");
 }
 
 export function rotuloDistanciaMetros(metros: number): string {
-  return formatarDistancia(metros / 1000);
+  return formatarDistanciaMetros(metros);
 }
 
 function paraMinutos(hora: string) {

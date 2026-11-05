@@ -12,7 +12,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, fonts, radius, spacing } from "../src/theme/tokens";
 import { usePreferencias } from "../src/preferencias/PreferenciasProvider";
-import { CIDADES, INTERESSES } from "../src/preferencias/dados";
+import { SeletorCidade } from "../src/components/cidade/SeletorCidade";
+import { INTERESSES } from "../src/preferencias/dados";
 
 export default function Onboarding() {
   const router = useRouter();
@@ -24,7 +25,6 @@ export default function Onboarding() {
     pronto,
     erro,
     alternarInteresse,
-    escolherCidade,
     concluirOnboarding,
   } = usePreferencias();
   const [etapa, setEtapa] = useState<1 | 2>(1);
@@ -177,22 +177,7 @@ export default function Onboarding() {
             <Text style={styles.title}>Qual cidade você quer conhecer?</Text>
             <Text style={styles.subtitle}>Escolha uma cidade para ver os lugares dela em Explorar. Você poderá trocar depois.</Text>
           </View>
-          <View style={styles.cityList}>
-            {CIDADES.map((cidade) => {
-              const selecionada = cidadeId === cidade.id;
-              return <Pressable
-                key={cidade.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${cidade.nome}, ${cidade.uf}`}
-                accessibilityState={{ selected: selecionada }}
-                onPress={() => escolherCidade(cidade.id)}
-                style={({ pressed }) => [styles.city, selecionada && styles.interestSelected, pressed && styles.interestPressed]}
-              >
-                <Text style={[styles.cityName, selecionada && styles.interestLabelSelected]}>{cidade.nome}, {cidade.uf}</Text>
-                <Text style={[styles.cityCheck, selecionada && styles.cityCheckSelected]}>{selecionada ? "✓" : ""}</Text>
-              </Pressable>;
-            })}
-          </View>
+          <SeletorCidade variante="cartoes" />
         </>}
         {(erro || erroContinuar) && <Text accessibilityLiveRegion="polite" style={styles.error}>{erroContinuar || erro}</Text>}
       </ScrollView>
@@ -393,29 +378,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.text,
   },
-  cityList: { gap: 12 },
-  city: {
-    minHeight: 64,
-    borderRadius: radius.card,
-    borderWidth: 1.5,
-    borderColor: colors.surface3,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  cityName: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
-  cityCheck: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: colors.surface3,
-    textAlign: "center",
-    color: colors.onDark,
-  },
-  cityCheckSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
   error: { marginTop: 16, fontFamily: fonts.semibold, fontSize: 13, color: colors.error },
   footer: {
     paddingHorizontal: spacing.pageX,

@@ -1,7 +1,7 @@
 import { Platform, View } from "react-native";
 import { colors } from "../src/theme/tokens";
 import { useEffect } from "react";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -19,6 +19,8 @@ import {
 } from "../src/sessao/SessaoProvider";
 import { PreferenciasProvider } from "../src/preferencias/PreferenciasProvider";
 import { LocalizacaoProvider } from "../src/localizacao";
+import { TituloPagina } from "../src/components/visual/TituloPagina";
+import { tituloDaRota } from "../src/navegacao/titulos";
 
 // Segura a splash nativa até a fonte carregar. Sem isso dá pra ver o título
 // piscando na fonte do sistema antes da Jakarta entrar. Também espera a
@@ -73,22 +75,29 @@ export default function RootLayout() {
 // abertura some, o expo-router cai na primeira rota disponível, as abas.
 function Rotas() {
   const { temSessao } = useSessao();
+  const caminho = usePathname();
 
+  // `title` é o nome da tela para o leitor de tela no celular; na web o
+  // expo-router não usa esse campo, e a aba do navegador vem do <Head> em
+  // TituloPagina. Lugar e roteiro trocam os dois pelo nome real.
   return (
+    <>
+    <TituloPagina titulo={tituloDaRota(caminho, temSessao)} />
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!temSessao}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="index" options={{ title: "Raízes" }} />
       </Stack.Protected>
       <Stack.Protected guard={temSessao}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="local/[id]" />
-        <Stack.Screen name="roteiro/criar" />
-        <Stack.Screen name="roteiro/[id]" />
-        <Stack.Screen name="localizacao" />
+        <Stack.Screen name="(tabs)" options={{ title: "Raízes" }} />
+        <Stack.Screen name="local/[id]" options={{ title: "Lugar" }} />
+        <Stack.Screen name="roteiro/criar" options={{ title: "Criar roteiro" }} />
+        <Stack.Screen name="roteiro/[id]" options={{ title: "Roteiro" }} />
+        <Stack.Screen name="localizacao" options={{ title: "Sua localização" }} />
       </Stack.Protected>
-      <Stack.Screen name="login" />
-      <Stack.Screen name="cadastro" />
-      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="login" options={{ title: "Entrar" }} />
+      <Stack.Screen name="cadastro" options={{ title: "Criar conta" }} />
+      <Stack.Screen name="onboarding" options={{ title: "Suas preferências" }} />
     </Stack>
+    </>
   );
 }

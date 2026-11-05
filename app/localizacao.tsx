@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { formatarDistanciaMetros } from "../src/formatos/formatos";
 import { useLocalizacao, type EstadoLocalizacao } from "../src/localizacao";
 import {
   colors,
@@ -161,8 +162,9 @@ export default function Localizacao() {
           <View accessibilityLiveRegion="polite" style={styles.coordenadas}>
             <Text style={styles.coordenadasTitulo}>POSIÇÃO ATUAL</Text>
             <Text style={styles.coordenadasTexto}>
-              {coordenadas.latitude.toFixed(5)},{" "}
-              {coordenadas.longitude.toFixed(5)}
+              {coordenadas.precisaoMetros != null
+                ? `Encontrada, com precisão de ${formatarDistanciaMetros(coordenadas.precisaoMetros)}`
+                : "Encontrada"}
             </Text>
           </View>
         ) : null}

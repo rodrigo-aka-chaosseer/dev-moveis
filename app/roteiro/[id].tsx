@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { Tela, Botao, Estado, v } from "../../src/components/visual/Guia";
+import { Stack, useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { Carregando, ErroCarregar, Vazio } from "../../src/components/visual/Estados";
+import { TituloPagina } from "../../src/components/visual/TituloPagina";
+import { Tela, v } from "../../src/components/visual/Guia";
 import { FotoParada } from "../../src/components/roteiros/FotoParada";
 import { NumerosRoteiro } from "../../src/components/roteiros/NumerosRoteiro";
 import { rotuloCategoria } from "../../src/locais/listarLocais";
@@ -14,13 +16,16 @@ import { colors, fonts } from "../../src/theme/tokens";
 export default function DetalheRoteiro() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { roteiro, carregando, erro } = useRoteiro(Array.isArray(id) ? id[0] : id);
+  const { roteiro, carregando, erro, recarregar } = useRoteiro(Array.isArray(id) ? id[0] : id);
   const voltar = () => { if (router.canGoBack()) router.back(); else router.replace("/(tabs)/roteiros"); };
 
-  if (carregando) return <Tela><Estado titulo="Traçando o caminho…" carregando /></Tela>;
-  if (erro || !roteiro) return <Tela><Estado titulo="Roteiro indisponível" descricao={erro ?? "Este roteiro não existe ou não está mais publicado."} icone="trail-sign-outline" /><Botao texto="Voltar aos roteiros" onPress={voltar} /></Tela>;
+  if (carregando) return <Tela><Carregando titulo="Traçando o caminho…" /></Tela>;
+  if (erro) return <Tela><ErroCarregar mensagem={erro} onTentarDeNovo={recarregar} secundaria={{ texto: "Voltar aos roteiros", onPress: voltar }} /></Tela>;
+  if (!roteiro) return <Tela><Vazio icone="trail-sign-outline" titulo="Roteiro indisponível" mensagem="Este roteiro não existe ou não está mais publicado." acao={{ texto: "Voltar aos roteiros", onPress: voltar }} /></Tela>;
 
   return <Tela>
+    <Stack.Screen options={{ title: roteiro.titulo }} />
+    <TituloPagina titulo={roteiro.titulo} />
     <View style={s.topo}><Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={voltar} style={s.voltar}><Ionicons name="arrow-back" size={22} color={colors.earth} /></Pressable><Text style={v.legenda}>ROTEIRO TEMÁTICO</Text><Ionicons name="trail-sign-outline" size={22} color={colors.earth} /></View>
     <View style={{ gap: 8 }}>
       {roteiro.cidadeId ? <Text style={v.legenda}>{nomeCidade(roteiro.cidadeId)}</Text> : null}
@@ -29,7 +34,7 @@ export default function DetalheRoteiro() {
     </View>
     <NumerosRoteiro roteiro={roteiro} paradas={paradasDisponiveis(roteiro).length} fundo={colors.surface} />
     {roteiro.paradas.length === 0
-      ? <Estado titulo="Ainda sem paradas" descricao="Este roteiro ainda não tem lugares publicados." icone="trail-sign-outline" />
+      ? <Vazio icone="trail-sign-outline" titulo="Ainda sem paradas" mensagem="Este roteiro ainda não tem lugares publicados." acao={{ texto: "Ver outros roteiros", onPress: voltar }} />
       : <View>{roteiro.paradas.map((parada, indice) => <Parada key={parada.ordem} parada={parada} numero={indice + 1} ultima={indice === roteiro.paradas.length - 1} onAbrir={(localId) => router.push(`/local/${localId}` as Href)} />)}</View>}
     <Text style={[v.descricao, { fontSize: 11 }]}>Distância em linha reta entre as paradas. Horários são sugestões.{roteiro.custoCentavos == null ? " Custo “—”: há entrada com preço a confirmar no local." : ""}</Text>
   </Tela>;
