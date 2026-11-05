@@ -1,10 +1,13 @@
 import type { Local } from "../db/schema";
 import type { CidadeId } from "../preferencias/dados";
+import type { Acessibilidade } from "../locais/acessibilidade";
 
 export type LocalLista = Local & {
   cidadeId: CidadeId;
   tags: string[];
   distancia: string;
+  /** Presente quando o catálogo possui informação verificada. */
+  acessibilidade?: Acessibilidade;
 };
 
 export type CategoriaLocal =
