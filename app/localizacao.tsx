@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -73,6 +73,7 @@ export default function Localizacao() {
   const permissaoBloqueada =
     estado === "permissao_negada" && !podePerguntarNovamente;
   const texto = TEXTOS[estado];
+  const [erroConfiguracoes, setErroConfiguracoes] = useState<string | null>(null);
 
   useEffect(() => {
     if (!permissaoBloqueada) return;
@@ -95,7 +96,12 @@ export default function Localizacao() {
       return;
     }
     if (permissaoBloqueada) {
-      await Linking.openSettings().catch(() => {});
+      setErroConfiguracoes(null);
+      try {
+        await Linking.openSettings();
+      } catch {
+        setErroConfiguracoes("Não conseguimos abrir as configurações. Abra Ajustes > Aplicativos > Raízes > Permissões e autorize a localização.");
+      }
       return;
     }
     await solicitar();
@@ -175,6 +181,7 @@ export default function Localizacao() {
             estiver em uso. Depois, volte e toque em “Tentar novamente”.
           </Text>
         ) : null}
+        {erroConfiguracoes ? <Text accessibilityRole="alert" style={styles.erroConfiguracoes}>{erroConfiguracoes}</Text> : null}
       </View>
 
       <View style={styles.acoes}>
@@ -299,6 +306,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: colors.textMuted,
   },
+  erroConfiguracoes: { marginTop: 12, textAlign: "center", fontFamily: fonts.semibold, fontSize: 12, lineHeight: 19, color: colors.error },
   acoes: {
     gap: 8,
   },

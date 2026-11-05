@@ -23,9 +23,9 @@ export const OPCOES_RITMO: readonly {
   rotulo: string;
   descricao: string;
 }[] = [
-  { id: "tranquilo", rotulo: "Tranquilo", descricao: "Poucas paradas e mais tempo em cada uma" },
-  { id: "moderado", rotulo: "Moderado", descricao: "Equilíbrio entre tempo e quantidade de lugares" },
-  { id: "intenso", rotulo: "Intenso", descricao: "Mais paradas para aproveitar o dia" },
+  { id: "tranquilo", rotulo: "Tranquilo", descricao: "Até 3 paradas, com mais tempo em cada lugar" },
+  { id: "moderado", rotulo: "Moderado", descricao: "Até 5 paradas, equilibrando tempo e variedade" },
+  { id: "intenso", rotulo: "Intenso", descricao: "Até 8 paradas para aproveitar mais lugares" },
 ];
 
 export const OPCOES_ACESSIBILIDADE: readonly {

@@ -8,6 +8,7 @@ import { SecaoAcessibilidade, SecaoAmbienteSensorial } from "./SecoesAcessibilid
 vi.mock("react-native", () => ({
   Text: "Text",
   View: "View",
+  Pressable: "Pressable",
   StyleSheet: { create: (styles: unknown) => styles },
 }));
 vi.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }));
@@ -19,7 +20,6 @@ const rotulosAcessiveis = () =>
     .findAllByType(tipo("View"))
     .filter((item) => item.props.accessible)
     .map((item) => item.props.accessibilityLabel);
-const texto = () => JSON.stringify(tela.toJSON());
 
 async function montar(elemento: ReturnType<typeof createElement>) {
   await act(async () => {
@@ -45,12 +45,10 @@ describe("SecaoAcessibilidade", () => {
     expect(rotulosAcessiveis()).toEqual([
       "Rampa: disponível",
       "Elevador: não disponível",
-      "Banheiro acessível: não informado",
-      "Libras: não informado",
-      "Braille: não informado",
-      "Audiodescrição: não informado",
     ]);
-    for (const icone of tela.root.findAllByType(tipo("Ionicons"))) {
+    const iconesDosRecursos = tela.root.findAllByType(tipo("Ionicons")).filter((icone) => icone.props.accessibilityElementsHidden);
+    expect(iconesDosRecursos).toHaveLength(2);
+    for (const icone of iconesDosRecursos) {
       expect(icone.props.accessibilityElementsHidden).toBe(true);
       expect(icone.props.importantForAccessibility).toBe("no-hide-descendants");
     }
@@ -59,14 +57,12 @@ describe("SecaoAcessibilidade", () => {
     );
   });
 
-  it("sem nenhuma informação mostra um aviso só, sem dizer que não tem", async () => {
+  it("sem nenhuma informação não mostra uma seção vazia", async () => {
     await montar(
       createElement(SecaoAcessibilidade, { acessibilidade: ACESSIBILIDADE_DESCONHECIDA }),
     );
 
-    expect(texto()).toContain("Ainda não temos informações de acessibilidade deste lugar.");
-    expect(texto()).not.toContain("Não disponível");
-    expect(rotulosAcessiveis()).toEqual([]);
+    expect(tela.toJSON()).toBeNull();
   });
 });
 
@@ -93,9 +89,9 @@ describe("SecaoAmbienteSensorial", () => {
     ]);
   });
 
-  it("sem informação avisa em vez de esconder a seção", async () => {
+  it("sem informação não mostra uma seção vazia", async () => {
     await montar(createElement(SecaoAmbienteSensorial, { ambiente: null }));
 
-    expect(texto()).toContain("Ainda não temos informações sobre o ambiente deste lugar.");
+    expect(tela.toJSON()).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useState, type ComponentProps } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
   acessibilidadeDesconhecida,
@@ -24,17 +24,14 @@ const ICONES: Record<NivelAcessibilidade, { nome: NomeIcone; cor: string }> = {
 };
 
 export function SecaoAcessibilidade({ acessibilidade }: { acessibilidade: Acessibilidade }) {
+  const [ajudaAberta, setAjudaAberta] = useState(false);
+  if (acessibilidadeDesconhecida(acessibilidade)) return null;
+  const itens = itensAcessibilidade(acessibilidade).filter((item) => item.nivel !== "desconhecido");
   return (
     <View style={styles.secao}>
-      <Text accessibilityRole="header" style={styles.titulo}>
-        Acessibilidade
-      </Text>
-      {acessibilidadeDesconhecida(acessibilidade) ? (
-        <Text style={styles.vazio}>
-          Ainda não temos informações de acessibilidade deste lugar.
-        </Text>
-      ) : (
-        itensAcessibilidade(acessibilidade).map((item) => (
+      <TituloComAjuda titulo="Acessibilidade" aberta={ajudaAberta} onPress={() => setAjudaAberta((valor) => !valor)} />
+      {ajudaAberta ? <Text accessibilityLiveRegion="polite" style={styles.ajuda}>Mostra recursos de acesso informados pelo local. ✓ significa disponível, − parcialmente disponível e × não disponível.</Text> : null}
+      {itens.map((item) => (
           <View
             key={item.chave}
             accessible
@@ -55,24 +52,19 @@ export function SecaoAcessibilidade({ acessibilidade }: { acessibilidade: Acessi
               {item.situacao}
             </Text>
           </View>
-        ))
-      )}
+        ))}
     </View>
   );
 }
 
 export function SecaoAmbienteSensorial({ ambiente }: { ambiente: AmbienteSensorial | null }) {
+  const [ajudaAberta, setAjudaAberta] = useState(false);
+  if (ambiente === null) return null;
   return (
     <View style={styles.secao}>
-      <Text accessibilityRole="header" style={styles.titulo}>
-        Ambiente sensorial
-      </Text>
-      {ambiente === null ? (
-        <Text style={styles.vazio}>
-          Ainda não temos informações sobre o ambiente deste lugar.
-        </Text>
-      ) : (
-        itensAmbiente(ambiente).map((item) => (
+      <TituloComAjuda titulo="Ambiente sensorial" aberta={ajudaAberta} onPress={() => setAjudaAberta((valor) => !valor)} />
+      {ajudaAberta ? <Text accessibilityLiveRegion="polite" style={styles.ajuda}>Ajuda a antecipar estímulos da visita, como ruído, iluminação, movimento de pessoas, filas e espaços de descanso.</Text> : null}
+      {itensAmbiente(ambiente).map((item) => (
           <View
             key={item.rotulo}
             accessible
@@ -82,10 +74,18 @@ export function SecaoAmbienteSensorial({ ambiente }: { ambiente: AmbienteSensori
             <Text style={styles.rotulo}>{item.rotulo}</Text>
             <Text style={styles.valor}>{item.valor}</Text>
           </View>
-        ))
-      )}
+        ))}
     </View>
   );
+}
+
+function TituloComAjuda({ titulo, aberta, onPress }: { titulo: string; aberta: boolean; onPress: () => void }) {
+  return <View style={styles.tituloLinha}>
+    <Text accessibilityRole="header" style={styles.titulo}>{titulo}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Explicar ${titulo.toLowerCase()}`} accessibilityState={{ expanded: aberta }} hitSlop={8} onPress={onPress} style={styles.ajudaBotao}>
+      <Ionicons name="help-circle-outline" size={22} color={colors.accentDark} />
+    </Pressable>
+  </View>;
 }
 
 // Mesmo visual dos cartões de `components/visual/Guia` (v.bloco e
@@ -99,12 +99,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   titulo: {
+    flex: 1,
     fontFamily: fonts.semibold,
     fontSize: 19,
     letterSpacing: -0.5,
     color: colors.text,
     marginBottom: 6,
   },
+  tituloLinha: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+  ajudaBotao: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  ajuda: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 19, color: colors.textMuted, paddingBottom: 6 },
   linha: {
     flexDirection: "row",
     alignItems: "center",
@@ -126,12 +130,6 @@ const styles = StyleSheet.create({
   },
   valorDesconhecido: {
     fontFamily: fonts.regular,
-    color: colors.textMuted,
-  },
-  vazio: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 21,
     color: colors.textMuted,
   },
 });
