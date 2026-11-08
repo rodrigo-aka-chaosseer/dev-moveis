@@ -1,15 +1,19 @@
 -- Execute no SQL Editor depois de esquema.sql e supabase/seed.sql.
 -- Todas as colunas `ok` devem retornar true.
 
-select 'cidades ativas' as verificacao, count(*) >= 2 as ok, count(*) as encontrado
+select 'somente Palmas ativa' as verificacao,
+  count(*) = 1 and bool_and(id = 'palmas') as ok,
+  count(*) as encontrado
 from public.cidades where ativa;
 
-select 'locais públicos' as verificacao, count(*) >= 8 as ok, count(*) as encontrado
+select 'locais públicos de Palmas' as verificacao,
+  count(*) >= 8 and bool_and(cidade_id = 'palmas') as ok,
+  count(*) as encontrado
 from public.locais where arquivado_em is null;
 
 select cidade_id,
-  count(*) filter (where gratuito) > 0 as possui_gratuito,
-  count(*) filter (where not gratuito) > 0 as possui_pago
+  count(*) >= 8 as possui_catalogo_minimo,
+  count(*) filter (where gratuito) > 0 as possui_gratuito
 from public.locais where arquivado_em is null group by cidade_id order by cidade_id;
 
 select 'acessibilidade' as verificacao, count(*) >= 3 as ok, count(*) as encontrado
