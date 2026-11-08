@@ -121,10 +121,25 @@ create trigger usuarios_impedir_auto_promocao
 -- DOMÍNIO: lugar e contexto cultural
 -- ============================================================================
 
+-- Catálogo pequeno e público usado no onboarding e nos filtros. O id é um
+-- slug estável porque também é persistido localmente pelo aplicativo.
+create table cidades (
+  id text primary key,
+  nome text not null,
+  uf char(2) not null check (uf = upper(uf)),
+  latitude double precision not null check (latitude between -90 and 90),
+  longitude double precision not null check (longitude between -180 and 180),
+  ativa boolean not null default true
+);
+
+comment on table cidades is
+  'Cidades atendidas pelo Raízes. Somente cidades ativas aparecem para novas escolhas.';
+
 -- O coração do produto. `por_que_conhecer`, `historia` e `fonte`
 -- continuam obrigatórios — decisão 3, não se reabre aqui.
 create table locais (
   id uuid primary key default gen_random_uuid(),
+  cidade_id text not null references cidades (id) on delete restrict,
   nome text not null,
   categoria categoria_local not null,
 
@@ -174,6 +189,7 @@ comment on column locais.arquivado_em is
   'Nulo = publicado e visível pra todo mundo. Preenchido = arquivado: some da leitura pública, mas continua existindo — é o caminho de tirar um lugar de cena sem apagar (decisão 5). Curador continua vendo, pra poder desarquivar.';
 
 create index idx_locais_geom on locais using gist (geom);
+create index idx_locais_cidade on locais (cidade_id);
 create index idx_locais_categoria on locais (categoria);
 
 -- Mantém `atualizado_em` honesto sem depender de toda tela lembrar de
@@ -338,6 +354,7 @@ create index idx_sugestoes_local_status on sugestoes_local (status);
 -- Com servidor, uma linha por pessoa.
 create table preferencias (
   usuario_id uuid primary key references usuarios (id) on delete cascade,
+  cidade_id text references cidades (id) on delete restrict,
   interesses jsonb not null check (jsonb_typeof(interesses) = 'array'),
   temas_diversidade jsonb not null check (jsonb_typeof(temas_diversidade) = 'array'),
   modo_exploracao modo_exploracao not null default 'indiferente',
@@ -462,6 +479,7 @@ alter table preferencias enable row level security;
 alter table favoritos enable row level security;
 alter table visitas enable row level security;
 alter table avaliacoes enable row level security;
+alter table cidades enable row level security;
 alter table locais enable row level security;
 alter table revisoes_local enable row level security;
 alter table sugestoes_local enable row level security;
@@ -519,6 +537,12 @@ create policy avaliacoes_edicao_propria on avaliacoes
   for update using (usuario_id = auth.uid());
 create policy avaliacoes_remocao_propria on avaliacoes
   for delete using (usuario_id = auth.uid());
+
+-- cidades: catálogo público; somente curador altera.
+create policy cidades_leitura_publica on cidades
+  for select using (ativa or eh_curador());
+create policy cidades_escrita_curador on cidades
+  for all using (eh_curador()) with check (eh_curador());
 
 -- locais: conteúdo publicado é público para leitura (é o catálogo do
 -- app). Escrita só por curador, e só via fluxo de revisão — não é a tela

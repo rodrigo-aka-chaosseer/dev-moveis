@@ -14,10 +14,20 @@ import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite
  *    são "atrações". Retrofit disso depois é caro; agora custa um campo.
  */
 
-/* ─────────────── Locais ─────────────── */
+/* ─────────────── Cidades e locais ─────────────── */
+
+export const cidades = sqliteTable("cidades", {
+  id: text("id").primaryKey(),
+  nome: text("nome").notNull(),
+  uf: text("uf").notNull(),
+  latitude: real("latitude").notNull(),
+  longitude: real("longitude").notNull(),
+  ativa: integer("ativa", { mode: "boolean" }).notNull().default(true),
+});
 
 export const locais = sqliteTable("locais", {
   id: text("id").primaryKey(),
+  cidadeId: text("cidade_id").notNull().references(() => cidades.id),
   nome: text("nome").notNull(),
   categoria: text("categoria", {
     enum: [
@@ -144,6 +154,7 @@ export const roteiroParadas = sqliteTable(
 
 export const preferencias = sqliteTable("preferencias", {
   id: integer("id").primaryKey().default(1),
+  cidadeId: text("cidade_id").references(() => cidades.id),
   interesses: text("interesses", { mode: "json" }).$type<string[]>().notNull(),
   temasDiversidade: text("temas_diversidade", { mode: "json" }).$type<string[]>().notNull(),
   modoExploracao: text("modo_exploracao", {
