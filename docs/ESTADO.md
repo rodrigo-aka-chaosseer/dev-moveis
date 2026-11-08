@@ -54,8 +54,9 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 Supabase, com Postgres. Esquema completo em `docs/banco/esquema.sql` e
 `docs/banco/esquema.md`. Configuração local, seed idempotente e verificação
 estão em `supabase/config.toml`, `supabase/seed.sql` e
-`docs/banco/validar.sql`. Falta vincular as credenciais do projeto hospedado
-e executar o DDL e o seed nesse ambiente.
+`docs/banco/validar.sql`. O projeto hospedado de desenvolvimento está ligado
+ao app e recebeu a migração incremental de `docs/banco/migrar_cidades.sql` e
+o seed em 8 de novembro de 2026. A chave privada continua fora do aplicativo.
 
 ## Acessibilidade e ambiente sensorial (RAÍZES-24, feita)
 

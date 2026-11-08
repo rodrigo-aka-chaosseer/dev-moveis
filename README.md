@@ -57,6 +57,9 @@ pelo Git; somente `.env.example`, sem segredos, é versionado.
    roteiros gerados. Desconectado, o catálogo público continua legível, mas as
    preferências privadas não.
 
+Se o projeto já possuía a versão anterior do esquema, execute somente
+[docs/banco/migrar_cidades.sql](docs/banco/migrar_cidades.sql) antes do seed.
+
 O arquivo [supabase/config.toml](supabase/config.toml) configura o ambiente
 local, e `supabase/seed.sql` é reaplicável. Com Docker e a CLI disponíveis,
 `npx supabase start` inicia a stack local. Para um projeto remoto, vincule-o com

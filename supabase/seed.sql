@@ -126,12 +126,6 @@ on conflict (id) do update set
   duracao_min = excluded.duracao_min, distancia_metros = excluded.distancia_metros,
   custo_centavos = excluded.custo_centavos;
 
-delete from public.roteiro_paradas
-where roteiro_id in (
-  '20000000-0000-4000-8000-000000000001',
-  '20000000-0000-4000-8000-000000000002'
-);
-
 insert into public.roteiro_paradas (
   roteiro_id, local_id, ordem, hora_sugerida, duracao_min
 ) values
@@ -140,5 +134,9 @@ insert into public.roteiro_paradas (
   ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 3, '12:00', 90),
   ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000005', 1, '09:00', 90),
   ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000006', 2, '11:00', 90),
-  ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000007', 3, '14:00', 75);
+  ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000007', 3, '14:00', 75)
+on conflict (roteiro_id, ordem) do update set
+  local_id = excluded.local_id,
+  hora_sugerida = excluded.hora_sugerida,
+  duracao_min = excluded.duracao_min;
 

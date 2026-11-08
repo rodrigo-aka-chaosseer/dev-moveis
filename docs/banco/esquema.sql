@@ -27,30 +27,44 @@ create extension if not exists postgis;
 -- Tipos
 -- ────────────────────────────────────────────────────────────────────────
 
-create type categoria_local as enum (
-  'gastronomia', 'historia', 'cultura', 'arte', 'musica',
-  'religiao', 'patrimonio', 'comunidade', 'natureza', 'evento'
-);
+-- PostgreSQL não oferece `create type if not exists` para enums. Os blocos
+-- tornam o bootstrap seguro quando os tipos já foram criados por uma tentativa
+-- anterior que parou antes das tabelas.
+do $$ begin
+  create type categoria_local as enum (
+    'gastronomia', 'historia', 'cultura', 'arte', 'musica',
+    'religiao', 'patrimonio', 'comunidade', 'natureza', 'evento'
+  );
+exception when duplicate_object then null; end $$;
 
-create type dimensao_diversidade as enum (
-  'etnica_racial', 'indigena', 'afro_brasileira', 'genero_sexualidade',
-  'religiosa', 'geracional', 'acessibilidade', 'neurodiversidade'
-);
+do $$ begin
+  create type dimensao_diversidade as enum (
+    'etnica_racial', 'indigena', 'afro_brasileira', 'genero_sexualidade',
+    'religiosa', 'geracional', 'acessibilidade', 'neurodiversidade'
+  );
+exception when duplicate_object then null; end $$;
 
 -- Reaproveitado nas oito colunas de `acessibilidade`.
-create type nivel_acessibilidade as enum ('sim', 'parcial', 'nao', 'desconhecido');
+do $$ begin create type nivel_acessibilidade as enum ('sim', 'parcial', 'nao', 'desconhecido');
+exception when duplicate_object then null; end $$;
 
-create type modo_exploracao as enum (
-  'caminhando', 'transporte_publico', 'carro', 'bicicleta', 'indiferente'
-);
+do $$ begin
+  create type modo_exploracao as enum (
+    'caminhando', 'transporte_publico', 'carro', 'bicicleta', 'indiferente'
+  );
+exception when duplicate_object then null; end $$;
 
-create type tipo_roteiro as enum ('tematico', 'gerado');
+do $$ begin create type tipo_roteiro as enum ('tematico', 'gerado');
+exception when duplicate_object then null; end $$;
 
-create type papel_usuario as enum ('membro', 'curador');
+do $$ begin create type papel_usuario as enum ('membro', 'curador');
+exception when duplicate_object then null; end $$;
 
-create type status_revisao as enum ('rascunho', 'em_revisao', 'publicado', 'rejeitado');
+do $$ begin create type status_revisao as enum ('rascunho', 'em_revisao', 'publicado', 'rejeitado');
+exception when duplicate_object then null; end $$;
 
-create type status_sugestao as enum ('pendente', 'aprovada', 'rejeitada');
+do $$ begin create type status_sugestao as enum ('pendente', 'aprovada', 'rejeitada');
+exception when duplicate_object then null; end $$;
 
 
 -- ============================================================================
