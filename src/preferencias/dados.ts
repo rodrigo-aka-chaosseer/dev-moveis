@@ -10,11 +10,10 @@ export const INTERESSES = [
 
 export type InteresseId = (typeof INTERESSES)[number]["id"];
 
-// Cidades disponíveis no catálogo de demonstração. Mais cidades poderão ser
-// oferecidas quando a fonte de locais estiver conectada ao backend.
+// O piloto do Raízes acontece exclusivamente em Palmas. Novas cidades só
+// entram quando tiverem catálogo curado e validado pela equipe.
 export const CIDADES = [
-  { id: "salvador", nome: "Salvador", uf: "BA", latitude: -12.9714, longitude: -38.5014 },
-  { id: "recife", nome: "Recife", uf: "PE", latitude: -8.0476, longitude: -34.8770 },
+  { id: "palmas", nome: "Palmas", uf: "TO", latitude: -10.184, longitude: -48.3336 },
 ] as const;
 
 export type CidadeId = (typeof CIDADES)[number]["id"];

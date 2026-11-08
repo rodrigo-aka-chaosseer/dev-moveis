@@ -25,7 +25,7 @@ const ID_BIA = "22222222-2222-2222-2222-222222222222";
 
 const COM_CIDADE: Preferencias = {
   interesses: ["musica"],
-  cidadeId: "salvador",
+  cidadeId: "palmas",
   onboardingConcluido: true,
 };
 
@@ -37,6 +37,7 @@ const SEM_CIDADE: Preferencias = {
 
 const LINHA_CONCLUIDA = {
   interesses: ["historia", "gastronomia"],
+  cidade_id: "palmas",
   onboarding_concluido: true,
 };
 
@@ -103,11 +104,12 @@ describe("mesclarComServidor", () => {
   it("onboarding concluído no servidor: os interesses de lá substituem os locais", () => {
     const resultado = mesclarComServidor(COM_CIDADE, {
       interesses: ["historia"],
+      cidadeId: "palmas",
       onboardingConcluido: true,
     });
 
     expect(resultado).toEqual({
-      preferencias: { interesses: ["historia"], cidadeId: "salvador", onboardingConcluido: true },
+      preferencias: { interesses: ["historia"], cidadeId: "palmas", onboardingConcluido: true },
       enviar: false,
     });
   });
@@ -115,6 +117,7 @@ describe("mesclarComServidor", () => {
   it("aparelho sem cidade: interesses do servidor, onboarding local continua false", () => {
     const resultado = mesclarComServidor(SEM_CIDADE, {
       interesses: ["historia"],
+      cidadeId: null,
       onboardingConcluido: true,
     });
 
@@ -135,7 +138,9 @@ describe("mesclarComServidor", () => {
 
   it("linha sem onboarding concluído: o local sobe", () => {
     expect(
-      mesclarComServidor(COM_CIDADE, { interesses: ["arte"], onboardingConcluido: false }),
+      mesclarComServidor(COM_CIDADE, {
+        interesses: ["arte"], cidadeId: "palmas", onboardingConcluido: false,
+      }),
     ).toEqual({ preferencias: COM_CIDADE, enviar: true });
   });
 });
@@ -144,16 +149,21 @@ describe("buscarPreferencias e enviarPreferencias", () => {
   it("busca a linha da conta e descarta interesse desconhecido", async () => {
     const { from, builder, busca } = clienteFalso();
     busca.mockResolvedValueOnce({
-      data: { interesses: ["historia", "inventado", 3, "historia"], onboarding_concluido: true },
+      data: {
+        interesses: ["historia", "inventado", 3, "historia"],
+        cidade_id: "palmas",
+        onboarding_concluido: true,
+      },
       error: null,
     });
 
     await expect(buscarPreferencias(ID_ANA)).resolves.toEqual({
       interesses: ["historia"],
+      cidadeId: "palmas",
       onboardingConcluido: true,
     });
     expect(from).toHaveBeenCalledWith("preferencias");
-    expect(builder.select).toHaveBeenCalledWith("interesses, onboarding_concluido");
+    expect(builder.select).toHaveBeenCalledWith("interesses, cidade_id, onboarding_concluido");
     expect(builder.eq).toHaveBeenCalledWith("usuario_id", ID_ANA);
     expect(builder.maybeSingle).toHaveBeenCalled();
   });
@@ -174,12 +184,15 @@ describe("buscarPreferencias e enviarPreferencias", () => {
   it("faz upsert por usuario_id com temas e acessibilidade vazios", async () => {
     const { from, builder } = clienteFalso();
 
-    await enviarPreferencias(ID_ANA, { interesses: ["musica"], onboardingConcluido: true });
+    await enviarPreferencias(ID_ANA, {
+      interesses: ["musica"], cidadeId: "palmas", onboardingConcluido: true,
+    });
 
     expect(from).toHaveBeenCalledWith("preferencias");
     expect(builder.upsert).toHaveBeenCalledWith(
       {
         usuario_id: ID_ANA,
+        cidade_id: "palmas",
         interesses: ["musica"],
         onboarding_concluido: true,
         temas_diversidade: [],
@@ -194,14 +207,14 @@ describe("buscarPreferencias e enviarPreferencias", () => {
     envio.mockResolvedValueOnce({ error: { message: "boom" } });
 
     await expect(
-      enviarPreferencias(ID_ANA, { interesses: [], onboardingConcluido: false }),
+      enviarPreferencias(ID_ANA, { interesses: [], cidadeId: null, onboardingConcluido: false }),
     ).rejects.toEqual({ message: "boom" });
   });
 
   it("sem Supabase configurado, recusa sem chamar nada", async () => {
     await expect(buscarPreferencias(ID_ANA)).rejects.toBeTruthy();
     await expect(
-      enviarPreferencias(ID_ANA, { interesses: [], onboardingConcluido: false }),
+      enviarPreferencias(ID_ANA, { interesses: [], cidadeId: null, onboardingConcluido: false }),
     ).rejects.toBeTruthy();
   });
 });
@@ -219,13 +232,13 @@ describe("criarSincronizador", () => {
     expect(aplicar).toHaveBeenCalledTimes(1);
     expect(local.atual).toEqual({
       interesses: ["historia", "gastronomia"],
-      cidadeId: "salvador",
+      cidadeId: "palmas",
       onboardingConcluido: true,
     });
     expect(builder.upsert).not.toHaveBeenCalled();
   });
 
-  it("aparelho sem cidade: recebe os interesses, mas o onboarding local fica false", async () => {
+  it("aparelho novo recebe cidade e interesses concluídos da conta", async () => {
     const { busca, builder } = clienteFalso();
     busca.mockResolvedValueOnce({ data: LINHA_CONCLUIDA, error: null });
     const { local, sincronizador, alterar } = montar(SEM_CIDADE);
@@ -235,12 +248,11 @@ describe("criarSincronizador", () => {
 
     expect(local.atual).toEqual({
       interesses: ["historia", "gastronomia"],
-      cidadeId: null,
-      onboardingConcluido: false,
+      cidadeId: "palmas",
+      onboardingConcluido: true,
     });
 
-    // Mexer nos interesses antes de escolher a cidade não desfaz o
-    // onboarding que a conta já concluiu em outro aparelho.
+    // Mexer nos interesses não desfaz o onboarding concluído em outro aparelho.
     alterar({ interesses: ["historia"] });
     await esperar();
 
@@ -261,6 +273,7 @@ describe("criarSincronizador", () => {
     expect(builder.upsert).toHaveBeenCalledWith(
       {
         usuario_id: ID_ANA,
+        cidade_id: "palmas",
         interesses: ["musica"],
         onboarding_concluido: true,
         temas_diversidade: [],
@@ -495,7 +508,7 @@ describe("criarSincronizador", () => {
       const daAna = adiada<Resposta>();
       busca.mockReturnValueOnce(daAna.promessa);
       busca.mockResolvedValueOnce({
-        data: { interesses: ["eventos"], onboarding_concluido: true },
+        data: { interesses: ["eventos"], cidade_id: "palmas", onboarding_concluido: true },
         error: null,
       });
       const { local, aplicar, sincronizador } = montar(COM_CIDADE);
@@ -510,6 +523,7 @@ describe("criarSincronizador", () => {
       expect(builder.eq).toHaveBeenLastCalledWith("usuario_id", ID_BIA);
       expect(aplicar).toHaveBeenCalledTimes(1);
       expect(local.atual.interesses).toEqual(["eventos"]);
+      expect(local.atual.cidadeId).toBe("palmas");
       expect(builder.upsert).not.toHaveBeenCalled();
     });
 
@@ -533,3 +547,4 @@ describe("criarSincronizador", () => {
     });
   });
 });
+

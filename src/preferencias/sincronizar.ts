@@ -7,19 +7,19 @@
  * melhor esforço. Falha de rede vira `console.warn`, nunca erro na tela, e não
  * desfaz a escolha local; a próxima alteração tenta de novo.
  *
- * Sobem só `interesses` e `onboarding_concluido`. A cidade fica no aparelho
- * (a tabela não tem coluna para ela) e necessidade de acessibilidade não é
- * coletada (dado sensível, decisão 6): vai sempre `[]`.
+ * Sobem `interesses`, `cidade_id` e `onboarding_concluido`. Necessidade de
+ * acessibilidade não é coletada (dado sensível, decisão 6): vai sempre `[]`.
  *
  * Visitante e modo mock nunca chegam aqui: só existe `usuarioId` com conta
  * identificada e Supabase configurado, e mesmo assim toda chamada confere
  * `supabase` antes.
  */
 import { supabase } from "../lib/supabase";
-import { filtrarInteresses, type InteresseId, type Preferencias } from "./dados";
+import { CIDADES, filtrarInteresses, type InteresseId, type Preferencias } from "./dados";
 
 export type PreferenciasServidor = {
   interesses: InteresseId[];
+  cidadeId: Preferencias["cidadeId"];
   onboardingConcluido: boolean;
 };
 
@@ -31,15 +31,20 @@ export async function buscarPreferencias(
 
   const { data, error } = await supabase
     .from("preferencias")
-    .select("interesses, onboarding_concluido")
+    .select("interesses, cidade_id, onboarding_concluido")
     .eq("usuario_id", usuarioId)
     .maybeSingle();
   if (error) throw error;
   if (!data || typeof data !== "object") return null;
 
-  const linha = data as { interesses?: unknown; onboarding_concluido?: unknown };
+  const linha = data as {
+    interesses?: unknown;
+    cidade_id?: unknown;
+    onboarding_concluido?: unknown;
+  };
   return {
     interesses: filtrarInteresses(linha.interesses),
+    cidadeId: ehCidadeId(linha.cidade_id) ? linha.cidade_id : null,
     onboardingConcluido: linha.onboarding_concluido === true,
   };
 }
@@ -54,6 +59,7 @@ export async function enviarPreferencias(
   const { error } = await supabase.from("preferencias").upsert(
     {
       usuario_id: usuarioId,
+      cidade_id: preferencias.cidadeId,
       interesses: preferencias.interesses,
       onboarding_concluido: preferencias.onboardingConcluido,
       temas_diversidade: [],
@@ -69,10 +75,8 @@ export async function enviarPreferencias(
  * interesses de lá substituem os locais. Sem linha ou sem onboarding
  * concluído: o aparelho manda e as preferências locais sobem.
  *
- * Regra da cidade: a cidade só existe no aparelho, e o onboarding local só
- * pode estar concluído com cidade escolhida. Num aparelho sem cidade, os
- * interesses vêm do servidor mas o onboarding local fica false até a pessoa
- * escolher a cidade.
+ * Cidade e interesses concluídos no servidor substituem os locais. Dados
+ * incompletos nunca marcam o onboarding como concluído.
  */
 export function mesclarComServidor(
   local: Preferencias,
@@ -83,7 +87,9 @@ export function mesclarComServidor(
       preferencias: {
         ...local,
         interesses: servidor.interesses,
-        onboardingConcluido: local.cidadeId !== null,
+        cidadeId: servidor.cidadeId,
+        onboardingConcluido:
+          servidor.cidadeId !== null && servidor.interesses.length > 0,
       },
       enviar: false,
     };
@@ -174,6 +180,7 @@ export function criarSincronizador(opcoes: {
       try {
         await enviarPreferencias(alvo.usuarioId, {
           interesses: local.interesses,
+          cidadeId: local.cidadeId,
           onboardingConcluido: concluido,
         });
         if (concluido) alvo.concluidaNoServidor = true;
@@ -217,4 +224,8 @@ export function criarSincronizador(opcoes: {
       enfileirarEnvio(alvo);
     },
   };
+}
+
+function ehCidadeId(valor: unknown): valor is NonNullable<Preferencias["cidadeId"]> {
+  return typeof valor === "string" && CIDADES.some((cidade) => cidade.id === valor);
 }

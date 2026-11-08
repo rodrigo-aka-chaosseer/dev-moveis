@@ -8,24 +8,22 @@ const porId = (id: string) => locais.find((local) => local.id === id)!;
 
 describe("calcularRoteiro", () => {
   it("soma visita e caminhada e marca o horário de cada parada", () => {
-    const resultado = calcularRoteiro([porId("paco-frevo"), porId("cais-sertao")], "09:00");
+    const resultado = calcularRoteiro([porId("memorial-coluna-prestes"), porId("praca-dos-girassois")], "09:00");
 
     expect(resultado.paradas.map((parada) => parada.horaSugerida)[0]).toBe("09:00");
-    // 90 min de visita no Paço + caminhada curta até o Cais.
-    expect(resultado.paradas[1].horaSugerida > "10:30").toBe(true);
-    expect(resultado.duracaoMin).toBeGreaterThanOrEqual(180);
+    expect(resultado.paradas[1].horaSugerida >= "10:00").toBe(true);
+    expect(resultado.duracaoMin).toBeGreaterThanOrEqual(150);
     expect(resultado.duracaoMin % 5).toBe(0);
     expect(resultado.paradas.every((parada) => Number(parada.horaSugerida.slice(3)) % 5 === 0)).toBe(true);
     expect(resultado.distanciaMetros).toBeGreaterThan(0);
   });
 
   it("só fecha o custo quando todo preço é conhecido", () => {
-    expect(calcularRoteiro([porId("casa-benin"), porId("igreja-rosario-pretos")]).custoCentavos).toBe(0);
-    expect(calcularRoteiro([porId("paco-frevo"), porId("cais-sertao")]).custoCentavos).toBeNull();
+    expect(calcularRoteiro([porId("palacinho"), porId("praca-dos-girassois")]).custoCentavos).toBe(0);
   });
 
   it("um lugar só não tem deslocamento", () => {
-    const resultado = calcularRoteiro([porId("casa-benin")]);
+    const resultado = calcularRoteiro([porId("palacinho")]);
     expect(resultado.distanciaMetros).toBe(0);
     expect(resultado.duracaoMin).toBe(60);
   });

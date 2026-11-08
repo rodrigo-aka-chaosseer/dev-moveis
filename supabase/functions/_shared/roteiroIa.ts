@@ -15,7 +15,7 @@
 // Contrato de entrada (o que o app manda)
 // ────────────────────────────────────────────────────────────────────────
 
-export const CIDADES_ROTEIRO = ["salvador", "recife"] as const;
+export const CIDADES_ROTEIRO = ["palmas"] as const;
 export type CidadeRoteiro = (typeof CIDADES_ROTEIRO)[number];
 
 export const RITMOS = ["tranquilo", "moderado", "intenso"] as const;
@@ -124,7 +124,7 @@ export function validarPedido(corpo: unknown): Resultado<PedidoNormalizado> {
   if (!ehObjeto(corpo)) return falha("Pedido inválido.");
 
   if (!incluido(CIDADES_ROTEIRO, corpo.cidadeId)) {
-    return falha("Escolha uma cidade disponível: Salvador ou Recife.");
+    return falha("Escolha uma cidade disponível: Palmas ou Palmas.");
   }
 
   const interesses = corpo.interesses;
@@ -363,8 +363,7 @@ function nomesDasTags(locaisTags: unknown): string[] {
  * não pode importar do app; se a cidade mudar lá, muda aqui.
  */
 const CENTRO_CIDADE: Record<CidadeRoteiro, { latitude: number; longitude: number }> = {
-  salvador: { latitude: -12.9714, longitude: -38.5014 },
-  recife: { latitude: -8.0476, longitude: -34.877 },
+  palmas: { latitude: -10.184, longitude: -48.3336 },
 };
 const RAIO_CIDADE_KM = 30;
 
@@ -497,8 +496,7 @@ export const LIMITES_RESPOSTA = {
 } as const;
 
 const NOME_CIDADE: Record<CidadeRoteiro, string> = {
-  salvador: "Salvador (BA)",
-  recife: "Recife (PE)",
+  palmas: "Palmas (TO)",
 };
 
 // Os limites pedidos aqui são menores que os de LIMITES_RESPOSTA de propósito:
@@ -906,3 +904,5 @@ function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   const limitado = Math.min(1, Math.max(0, a));
   return 6371 * 2 * Math.atan2(Math.sqrt(limitado), Math.sqrt(1 - limitado));
 }
+
+

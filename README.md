@@ -22,12 +22,57 @@ Se der erro estranho depois de trocar de branch, geralmente é cache:
 npx expo start --clear
 ```
 
+## Supabase
+
+O app funciona em dois modos:
+
+- sem `.env`, usa os dados locais de demonstração e não faz chamadas de rede;
+- com as duas variáveis abaixo, usa Auth, banco e Edge Functions do Supabase.
+
+Copie `.env.example` para `.env` e preencha apenas valores públicos obtidos em
+**Supabase Dashboard → Project Settings → API**:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://SEU_PROJECT_REF.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA
+```
+
+Depois reinicie o Expo com `npx expo start --clear`. Variáveis `EXPO_PUBLIC_*`
+fazem parte do aplicativo compilado: nunca coloque nelas `service_role`, senha
+do banco ou chave de provedor de IA. O `.env` e suas variações estão ignorados
+pelo Git; somente `.env.example`, sem segredos, é versionado.
+
+### Criar ou recriar o banco
+
+1. Crie um projeto de desenvolvimento no Supabase.
+2. No SQL Editor, execute [docs/banco/esquema.sql](docs/banco/esquema.sql).
+3. Execute [supabase/seed.sql](supabase/seed.sql) para carregar os dados
+   sintéticos de demonstração.
+4. Execute [docs/banco/validar.sql](docs/banco/validar.sql); todas as colunas
+   `ok` devem retornar `true`.
+5. Crie duas contas pela tela de cadastro. Confirme em `usuarios` que o trigger
+   criou os perfis automaticamente.
+6. Com cada conta, altere cidade e interesses. Confirme que cada sessão só
+   consegue ler/editar sua própria linha em `preferencias` e seus próprios
+   roteiros gerados. Desconectado, o catálogo público continua legível, mas as
+   preferências privadas não.
+
+Se o projeto já possuía a versão anterior do esquema, execute somente
+[docs/banco/migrar_cidades.sql](docs/banco/migrar_cidades.sql) antes do seed.
+
+O arquivo [supabase/config.toml](supabase/config.toml) configura o ambiente
+local, e `supabase/seed.sql` é reaplicável. Com Docker e a CLI disponíveis,
+`npx supabase start` inicia a stack local. Para um projeto remoto, vincule-o com
+`npx supabase link --project-ref SEU_PROJECT_REF`; não versione os arquivos
+temporários criados pela CLI.
+
 ## Estrutura
 
 ```
 app/          telas (o nome do arquivo vira a rota)
 src/theme/    cores, fontes e medidas do app
 src/db/       modelo de dados
+supabase/     configuração, seed e Edge Functions
 assets/       imagens
 docs/         estado do projeto e decisões
 ```

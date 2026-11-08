@@ -21,7 +21,7 @@ export default function Roteiros() {
     <Botao texto="Criar roteiro com IA" onPress={() => router.push("/roteiro/criar")} />
     {!pronto || carregando ? <Carregando titulo="Traçando os caminhos…" />
       : erro ? <ErroCarregar mensagem={erro} onTentarDeNovo={recarregar} />
-      : !cidadeId ? <Vazio icone="location-outline" titulo="Escolha uma cidade" mensagem="Escolha Salvador ou Recife para ver os roteiros da cidade." acao={{ texto: "Escolher no Explorar", onPress: () => router.push("/(tabs)/explorar") }} />
+      : !cidadeId ? <Vazio icone="location-outline" titulo="Escolha a cidade" mensagem="Selecione Palmas para ver os roteiros do piloto." acao={{ texto: "Escolher no Explorar", onPress: () => router.push("/(tabs)/explorar") }} />
       : !roteiros.length ? <Vazio icone="trail-sign-outline" titulo="Nenhum roteiro temático ainda" mensagem={`Ainda não publicamos roteiros temáticos em ${cidade}. Enquanto isso, descubra os lugares do catálogo.`} acao={{ texto: "Encontrar lugares", onPress: () => router.push("/(tabs)/explorar") }} />
       : roteiros.map((roteiro) => <CartaoRoteiro key={roteiro.id} roteiro={roteiro} onPress={() => router.push(`/roteiro/${roteiro.id}` as Href)} />)}
   </Tela>;

@@ -4,8 +4,8 @@ Este documento acompanha `esquema.sql`. Não repete os tipos de coluna — está
 aqui pra explicar, em português comum, o que cada tabela guarda e por que ela
 existe. Pensado pra ler em voz alta na apresentação.
 
-15 tabelas: 10 já existiam em `src/db/schema.ts` (SQLite) e ganharam dono ou
-tipo novo; 5 são novas, todas nascidas de uma pergunta que o servidor força a
+16 tabelas: 10 já existiam em `src/db/schema.ts` (SQLite) e ganharam dono ou
+tipo novo; 6 são novas, todas nascidas de uma pergunta que o servidor força a
 responder e que o aparelho sozinho não precisava responder.
 
 ## Pessoa e preferências
@@ -19,7 +19,7 @@ específica (favorito, preferência, visita) precisa apontar pra alguém — e
 "alguém" precisa ser uma tabela.
 
 ### `preferencias` — já existia, ganhou dono
-Interesses, temas de diversidade que a pessoa quer ver, como ela se desloca,
+Cidade, interesses, temas de diversidade que a pessoa quer ver, como ela se desloca,
 quanto tempo tem disponível, e as necessidades de acessibilidade dela. Antes
 era uma linha única no aparelho (só existia uma pessoa usando aquele
 aparelho); agora é uma linha por usuário. O campo de necessidades de
@@ -44,6 +44,12 @@ e é público — é o que outros usuários veem antes de decidir visitar. Uma
 pessoa avalia cada lugar uma vez só.
 
 ## Lugar e contexto cultural
+
+### `cidades` — novo
+Catálogo público das cidades atendidas, com nome, UF, coordenada central e o
+estado ativo. O identificador é o mesmo slug estável usado no app (`palmas`).
+Lugares apontam obrigatoriamente para uma cidade e a escolha do
+onboarding aponta opcionalmente para ela.
 
 ### `locais` — já existia, ganhou tipos e autoria
 O centro do app: cada lugar cultural cadastrado, com categoria, coordenada,
@@ -118,7 +124,8 @@ Isso quer dizer que a única coisa impedindo um usuário de ler ou escrever a
 linha de outro é a política de RLS — sem ela, qualquer pessoa com a URL do
 projeto lê a tabela inteira. `esquema.sql` liga RLS em toda tabela com dado
 de pessoa: `usuarios`, `preferencias`, `favoritos`, `visitas`, `avaliacoes`,
-`locais`, `revisoes_local`, `sugestoes_local` e `roteiros`/`roteiro_paradas`
+`cidades`, `locais`, `revisoes_local`, `sugestoes_local` e
+`roteiros`/`roteiro_paradas`
 (um roteiro gerado revela onde alguém foi ou quer ir — é dado de pessoa, não
 só conteúdo de catálogo).
 

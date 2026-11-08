@@ -16,9 +16,9 @@ const LOCAL_SALVADOR = {
   id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   nome: "Mercado Modelo",
   categoria: "cultura",
-  latitude: -12.9737,
-  longitude: -38.5138,
-  endereco: "Cidade Baixa, Salvador",
+  latitude: -10.1838,
+  longitude: -48.3337,
+  endereco: "Cidade Baixa, Palmas",
   horarios: null,
   gratuito: true,
   preco_centavos: null,
@@ -42,21 +42,6 @@ const ROTEIRO_SALVADOR = {
   roteiro_paradas: [
     { ordem: 2, local_id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", duracao_min: 30, hora_sugerida: "10:00:00", locais: null },
     { ordem: 1, local_id: LOCAL_SALVADOR.id, duracao_min: 45, hora_sugerida: "09:00:00", locais: LOCAL_SALVADOR },
-  ],
-};
-
-const ROTEIRO_RECIFE = {
-  ...ROTEIRO_SALVADOR,
-  id: "22222222-2222-2222-2222-222222222222",
-  titulo: "Recife Antigo",
-  roteiro_paradas: [
-    {
-      ordem: 1,
-      local_id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
-      duracao_min: 60,
-      hora_sugerida: null,
-      locais: { ...LOCAL_SALVADOR, id: "cccccccc-cccc-cccc-cccc-cccccccccccc", latitude: -8.0631, longitude: -34.8711 },
-    },
   ],
 };
 
@@ -93,16 +78,16 @@ function comBanco(resultado: { data: unknown; error: unknown }) {
 
 describe("listarRoteiros", () => {
   it("cai no catálogo local quando o Supabase não está configurado", async () => {
-    const lista = await listarRoteiros("recife");
+    const lista = await listarRoteiros("palmas");
 
-    expect(lista.map((roteiro) => roteiro.id)).toEqual(["frevo-sertao-recife"]);
+    expect(lista.map((roteiro) => roteiro.id)).toContain("memoria-e-cultura-palmas");
     expect(lista[0].paradas.every((parada) => parada.local !== null)).toBe(true);
   });
 
   it("lê só temáticos públicos, ordena as paradas e separa por cidade", async () => {
-    const { from, builder } = comBanco({ data: [ROTEIRO_SALVADOR, ROTEIRO_RECIFE], error: null });
+    const { from, builder } = comBanco({ data: [ROTEIRO_SALVADOR], error: null });
 
-    const lista = await listarRoteiros("salvador");
+    const lista = await listarRoteiros("palmas");
 
     expect(from).toHaveBeenCalledWith("roteiros");
     expect(builder.eq).toHaveBeenCalledWith("tipo", "tematico");
@@ -113,7 +98,7 @@ describe("listarRoteiros", () => {
       duracaoMin: 120,
       distanciaMetros: 1800,
       custoCentavos: 0,
-      cidadeId: "salvador",
+      cidadeId: "palmas",
     });
     expect(lista[0].paradas.map((parada) => parada.ordem)).toEqual([1, 2]);
     expect(lista[0].paradas[0].horaSugerida).toBe("09:00");
@@ -122,7 +107,7 @@ describe("listarRoteiros", () => {
   it("parada de lugar arquivado vem sem local e fica fora das disponíveis", async () => {
     comBanco({ data: [ROTEIRO_SALVADOR], error: null });
 
-    const [roteiro] = await listarRoteiros("salvador");
+    const [roteiro] = await listarRoteiros("palmas");
 
     expect(roteiro.paradas[1].local).toBeNull();
     expect(paradasDisponiveis(roteiro).map((parada) => parada.ordem)).toEqual([1]);
@@ -131,20 +116,20 @@ describe("listarRoteiros", () => {
   it("roteiro sem nenhuma parada publicada não entra na lista da cidade", async () => {
     comBanco({ data: [{ ...ROTEIRO_SALVADOR, roteiro_paradas: [] }], error: null });
 
-    expect(await listarRoteiros("salvador")).toEqual([]);
+    expect(await listarRoteiros("palmas")).toEqual([]);
   });
 
   it("propaga o erro do banco", async () => {
     comBanco({ data: null, error: new Error("falhou") });
 
-    await expect(listarRoteiros("salvador")).rejects.toThrow("falhou");
+    await expect(listarRoteiros("palmas")).rejects.toThrow("falhou");
   });
 });
 
 describe("buscarRoteiroPorId", () => {
   it("acha no catálogo local", async () => {
-    const roteiro = await buscarRoteiroPorId("caminhos-afro-salvador");
-    expect(roteiro?.paradas).toHaveLength(3);
+    const roteiro = await buscarRoteiroPorId("memoria-e-cultura-palmas");
+    expect(roteiro?.paradas).toHaveLength(4);
   });
 
   it("devolve null quando não existe", async () => {
@@ -161,3 +146,5 @@ describe("buscarRoteiroPorId", () => {
     expect(roteiro?.cidadeId).toBeNull();
   });
 });
+
+

@@ -39,12 +39,12 @@ const LINHA_CARNAVAL = {
   id: ID_CARNAVAL,
   nome: "Casa do Carnaval da Bahia",
   categoria: "cultura",
-  latitude: -12.9724,
-  longitude: -38.509,
+  latitude: -10.1844,
+  longitude: -48.3341,
   gratuito: false,
   preco_centavos: 2000,
   tempo_medio_min: 60,
-  por_que_conhecer: "Conta a história do carnaval de rua de Salvador.",
+  por_que_conhecer: "Conta a história do carnaval de rua de Palmas.",
   aviso_visitacao: null,
   locais_tags: [{ tags_diversidade: { nome: "Afro-brasileira" } }],
   acessibilidade: ACESSIVEL,
@@ -61,8 +61,8 @@ const LINHA_MERCADO = {
   ...LINHA_CARNAVAL,
   id: ID_MERCADO,
   nome: "Mercado Modelo",
-  latitude: -12.9737,
-  longitude: -38.5138,
+  latitude: -10.1838,
+  longitude: -48.3337,
   gratuito: true,
   preco_centavos: null,
   tempo_medio_min: 45,
@@ -76,8 +76,8 @@ const LINHA_IGREJA = {
   id: ID_IGREJA,
   nome: "Igreja do Rosário dos Pretos",
   categoria: "religiao",
-  latitude: -12.9719,
-  longitude: -38.5076,
+  latitude: -10.1687,
+  longitude: -48.3319,
   gratuito: true,
   preco_centavos: null,
   tempo_medio_min: 30,
@@ -98,7 +98,7 @@ const LINHAS = [LINHA_CARNAVAL, LINHA_MERCADO, LINHA_IGREJA, LINHA_RECIFE];
 
 function corpoValido(extra: Record<string, unknown> = {}) {
   return {
-    cidadeId: "salvador",
+    cidadeId: "palmas",
     interesses: ["cultura", "historia"],
     tempoDisponivelMin: 240,
     candidatos: [{ id: ID_CARNAVAL }, { id: ID_MERCADO }, { id: ID_IGREJA }, { id: ID_RECIFE }],
@@ -108,7 +108,7 @@ function corpoValido(extra: Record<string, unknown> = {}) {
 
 function pedido(extra: Partial<PedidoNormalizado> = {}): PedidoNormalizado {
   return {
-    cidadeId: "salvador",
+    cidadeId: "palmas",
     interesses: ["cultura"],
     tempoDisponivelMin: 240,
     orcamentoCentavos: null,
@@ -148,7 +148,7 @@ describe("validarPedido", () => {
     expect(resultado).toEqual({
       ok: true,
       valor: {
-        cidadeId: "salvador",
+        cidadeId: "palmas",
         interesses: ["cultura"],
         tempoDisponivelMin: 240,
         orcamentoCentavos: null,
@@ -372,7 +372,7 @@ describe("montarRequisicaoClaude", () => {
     const prompt = requisicao.system + requisicao.messages.map((m) => m.content).join("\n");
 
     expect(prompt).toContain(ID_CARNAVAL);
-    expect(prompt).toContain("Conta a história do carnaval de rua de Salvador.");
+    expect(prompt).toContain("Conta a história do carnaval de rua de Palmas.");
     expect(prompt).not.toContain("pessoa@exemplo.com");
     expect(prompt).not.toContain("9f1c0000");
     expect(prompt).not.toContain("-12.98765");
@@ -599,3 +599,5 @@ describe("erros", () => {
     }
   });
 });
+
+

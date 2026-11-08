@@ -16,7 +16,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [ ] RAÍZES-03 — navegação por abas (Levi)
 - [ ] RAÍZES-04 — tela de perfil
 - [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
-- [x] RAÍZES-14 — primeiro lote com 8 lugares curados de Salvador e Recife
+- [x] RAÍZES-14 — piloto com 8 lugares curados exclusivamente de Palmas–TO
 - [x] RAÍZES-19 — sessão do app unificada com o Supabase Auth (Josias, #35)
 - [x] RAÍZES-25 — preferências sincronizadas com o Supabase (Josias, #48)
 
@@ -52,9 +52,11 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 ## Backend (fechado — decisão 5)
 
 Supabase, com Postgres. Esquema completo em `docs/banco/esquema.sql` e
-`docs/banco/esquema.md`. Falta: criar o projeto no Supabase, aplicar o DDL,
-migrar `src/db/schema.ts` de SQLite pra Postgres e ligar a primeira tela a
-dado real — quatro tasks da semana, uma por integrante.
+`docs/banco/esquema.md`. Configuração local, seed idempotente e verificação
+estão em `supabase/config.toml`, `supabase/seed.sql` e
+`docs/banco/validar.sql`. O projeto hospedado de desenvolvimento está ligado
+ao app e recebeu a migração incremental de `docs/banco/migrar_cidades.sql` e
+o seed em 8 de novembro de 2026. A chave privada continua fora do aplicativo.
 
 ## Acessibilidade e ambiente sensorial (RAÍZES-24, feita)
 
@@ -96,16 +98,14 @@ Visitante continua só local. As regras moram em
 Desde a RAÍZES-25, as preferências de conta identificada sincronizam com a
 tabela `preferencias` (RLS: só o dono lê e escreve). Ao entrar, o app busca a
 linha da conta: se lá o onboarding está concluído, os interesses do servidor
-substituem os locais; se não há linha (ou não está concluída), as locais
+e a cidade do servidor substituem os locais; se não há linha (ou não está concluída), as locais
 sobem. Depois disso, cada mudança de interesse e a conclusão do onboarding
-fazem upsert por `usuario_id`. Sobem só `interesses` e `onboarding_concluido`;
+fazem upsert por `usuario_id`. Sobem `cidade_id`, `interesses` e
+`onboarding_concluido`;
 temas e necessidades de acessibilidade vão vazios (dado sensível, decisão 6,
 não é coletado).
 
-Continua só no aparelho: a cidade (a tabela não tem coluna para ela). Por
-isso, num aparelho novo sem cidade, os interesses chegam do servidor, mas o
-onboarding local só conclui quando a pessoa escolhe a cidade. A sincronização
-é melhor esforço: sem rede, a escolha local fica e a próxima mudança tenta de
-novo. Visitante e modo mock (sem `.env`) continuam 100% locais, e sair da
-conta não apaga as preferências do aparelho. As regras moram em
-`src/preferencias/sincronizar.ts`.
+A sincronização é melhor esforço: sem rede, a escolha local fica e a próxima
+mudança tenta de novo. Visitante e modo mock (sem `.env`) continuam 100%
+locais, e sair da conta não apaga as preferências do aparelho. As regras
+moram em `src/preferencias/sincronizar.ts`.
