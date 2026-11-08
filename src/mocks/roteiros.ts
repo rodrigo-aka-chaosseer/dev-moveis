@@ -8,22 +8,16 @@ import { locais } from "./locais";
  */
 const ROTEIROS_CURADOS = [
   {
-    id: "caminhos-afro-salvador",
-    titulo: "Caminhos afro-brasileiros",
-    descricao: "Museu, arte da diáspora e a igreja da irmandade negra, a pé pelo Pelourinho.",
-    paradas: ["mafro-ufba", "casa-benin", "igreja-rosario-pretos"],
+    id: "memoria-e-cultura-palmas",
+    titulo: "Memória e cultura de Palmas",
+    descricao: "Da criação do Tocantins aos espaços culturais da capital.",
+    paradas: ["palacinho", "praca-dos-girassois", "memorial-coluna-prestes", "espaco-cultural-jose-gomes-sobrinho"],
   },
   {
-    id: "carnaval-e-literatura-salvador",
-    titulo: "Carnaval e literatura",
-    descricao: "Do Carnaval no Centro Histórico à casa de Jorge Amado e Zélia Gattai.",
-    paradas: ["casa-carnaval-bahia", "casa-rio-vermelho"],
-  },
-  {
-    id: "frevo-sertao-recife",
-    titulo: "Frevo, sertão e artesanato",
-    descricao: "Dois museus no Recife Antigo e o artesanato da antiga Casa de Detenção.",
-    paradas: ["paco-frevo", "cais-sertao", "casa-cultura-pernambuco"],
+    id: "natureza-e-sabores-palmas",
+    titulo: "Natureza e sabores de Palmas",
+    descricao: "Parques, feira e a orla para viver diferentes paisagens da cidade.",
+    paradas: ["parque-povos-indigenas", "parque-cesamar", "feira-304-sul", "praia-da-graciosa"],
   },
 ];
 
@@ -77,7 +71,7 @@ const ROTEIRO_INDISPONIVEL_DEMONSTRACAO: RoteiroMock = {
   distanciaMetros: 900,
   custoCentavos: 0,
   paradas: [
-    { ordem: 1, localId: "casa-benin", horaSugerida: "09:00", duracaoMin: 60 },
+    { ordem: 1, localId: "palacinho", horaSugerida: "09:00", duracaoMin: 60 },
     { ordem: 2, localId: "local-arquivado-demonstracao", horaSugerida: "10:15", duracaoMin: 45 },
   ],
 };
@@ -86,3 +80,4 @@ export const roteiros: RoteiroMock[] = [
   ...roteirosCurados,
   ROTEIRO_INDISPONIVEL_DEMONSTRACAO,
 ];
+

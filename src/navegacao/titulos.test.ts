@@ -5,7 +5,7 @@ import { tituloDaRota, tituloDocumento } from "./titulos";
 describe("títulos de tela", () => {
   it("nunca devolve o nome técnico da rota", () => {
     expect(tituloDaRota("/local/casa-benin", true)).toBe("Lugar");
-    expect(tituloDaRota("/roteiro/caminhos-afro-salvador", true)).toBe("Roteiro");
+    expect(tituloDaRota("/roteiro/caminhos-afro-palmas", true)).toBe("Roteiro");
     expect(tituloDaRota("/roteiro/criar", true)).toBe("Criar roteiro");
     expect(tituloDaRota("/rota-que-nao-existe", true)).toBe("Raízes");
   });
@@ -21,3 +21,4 @@ describe("títulos de tela", () => {
     expect(tituloDocumento("Raízes")).toBe("Raízes");
   });
 });
+

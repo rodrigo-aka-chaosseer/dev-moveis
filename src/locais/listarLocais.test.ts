@@ -16,9 +16,9 @@ const LINHA_SALVADOR = {
   id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   nome: "Mercado Modelo",
   categoria: "cultura" as const,
-  latitude: -12.9737,
-  longitude: -38.5138,
-  endereco: "Cidade Baixa, Salvador",
+  latitude: -10.1838,
+  longitude: -48.3337,
+  endereco: "Cidade Baixa, Palmas",
   horarios: { terca: { abre: "09:00", fecha: "18:00" } },
   gratuito: true,
   preco_centavos: null,
@@ -39,7 +39,7 @@ const LINHA_RECIFE = {
   nome: "Paço do Frevo",
   latitude: -8.0631,
   longitude: -34.8711,
-  endereco: "Recife Antigo, Recife",
+  endereco: "Palmas Antigo, Palmas",
   locais_tags: [{ tags_diversidade: { nome: "Cultura popular" } }],
 };
 
@@ -76,17 +76,17 @@ describe("listarLocais", () => {
   });
 
   it("cai no mock quando a URL do Supabase não está definida", async () => {
-    const lista = await listarLocais("salvador");
+    const lista = await listarLocais("palmas");
 
-    expect(lista.map((local) => local.id)).toContain("casa-carnaval-bahia");
-    expect(lista.every((local) => local.cidadeId === "salvador")).toBe(true);
+    expect(lista.map((local) => local.id)).toContain("praca-dos-girassois");
+    expect(lista.every((local) => local.cidadeId === "palmas")).toBe(true);
   });
 
   it("no mock filtra pela cidade escolhida", async () => {
-    const recife = await listarLocais("recife");
+    const palmas = await listarLocais("palmas");
 
-    expect(recife.map((local) => local.id)).toContain("paco-frevo");
-    expect(recife.every((local) => local.cidadeId === "recife")).toBe(true);
+    expect(palmas.map((local) => local.id)).toContain("palacinho");
+    expect(palmas.every((local) => local.cidadeId === "palmas")).toBe(true);
   });
 
   it("lê do banco, monta tags e ignora lugar de outra cidade", async () => {
@@ -97,7 +97,7 @@ describe("listarLocais", () => {
     });
     supabaseMock.cliente = { from };
 
-    const lista = await listarLocais("salvador");
+    const lista = await listarLocais("palmas");
 
     expect(from).toHaveBeenCalledWith("locais");
     expect(builder.is).toHaveBeenCalledWith("arquivado_em", null);
@@ -105,7 +105,7 @@ describe("listarLocais", () => {
     expect(lista[0]).toMatchObject({
       id: LINHA_SALVADOR.id,
       nome: "Mercado Modelo",
-      cidadeId: "salvador",
+      cidadeId: "palmas",
       porQueConhecer: LINHA_SALVADOR.por_que_conhecer,
       precoCentavos: null,
       tags: ["Afro-brasileira"],
@@ -131,7 +131,7 @@ describe("listarLocais", () => {
     });
     supabaseMock.cliente = { from };
 
-    const lista = await listarLocaisDetalhados("salvador");
+    const lista = await listarLocaisDetalhados("palmas");
 
     expect(from).toHaveBeenCalledWith("locais");
     expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("acessibilidade(*)"));
@@ -139,7 +139,7 @@ describe("listarLocais", () => {
     expect(builder.is).toHaveBeenCalledWith("arquivado_em", null);
     expect(lista[0]).toMatchObject({
       id: LINHA_SALVADOR.id,
-      cidadeId: "salvador",
+      cidadeId: "palmas",
       acessibilidade: { rampa: "sim" },
       ambienteSensorial: { ruido: "baixo" },
     });
@@ -149,13 +149,13 @@ describe("listarLocais", () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
     const { from } = consultaFalsa({
       data: [
-        { ...LINHA_SALVADOR, cidade_id: "recife", latitude: -12.9737, longitude: -38.5138 },
+        { ...LINHA_SALVADOR, cidade_id: "outra-cidade", latitude: -10.1838, longitude: -48.3337 },
       ],
       error: null,
     });
     supabaseMock.cliente = { from };
 
-    const lista = await listarLocais("salvador");
+    const lista = await listarLocais("palmas");
 
     expect(lista).toEqual([]);
   });
@@ -165,7 +165,7 @@ describe("listarLocais", () => {
     const { from } = consultaFalsa({ data: [], error: null });
     supabaseMock.cliente = { from };
 
-    await expect(listarLocais("salvador")).resolves.toEqual([]);
+    await expect(listarLocais("palmas")).resolves.toEqual([]);
   });
 
   it("propaga erro do banco para a tela mostrar ERRO_LISTA", async () => {
@@ -173,13 +173,13 @@ describe("listarLocais", () => {
     const { from } = consultaFalsa({ data: null, error: { message: "boom" } });
     supabaseMock.cliente = { from };
 
-    await expect(listarLocais("salvador")).rejects.toBeTruthy();
+    await expect(listarLocais("palmas")).rejects.toBeTruthy();
   });
 
   it("não usa mock se a URL existe sem cliente", async () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = "https://exemplo.supabase.co";
 
-    await expect(listarLocais("salvador")).rejects.toBeTruthy();
+    await expect(listarLocais("palmas")).rejects.toBeTruthy();
   });
 });
 
@@ -190,13 +190,13 @@ describe("buscarLocalPorId", () => {
   });
 
   it("cai no mock quando a URL não está definida", async () => {
-    const local = await buscarLocalPorId("casa-carnaval-bahia");
+    const local = await buscarLocalPorId("praca-dos-girassois");
 
-    expect(local?.nome).toBe("Casa do Carnaval da Bahia");
+    expect(local?.nome).toBe("Praça dos Girassóis");
   });
 
   it("no mock, acessibilidade e ambiente aparecem como não informados", async () => {
-    const local = await buscarLocalPorId("casa-carnaval-bahia");
+    const local = await buscarLocalPorId("praca-dos-girassois");
 
     expect(Object.values(local!.acessibilidade).every((nivel) => nivel === "desconhecido")).toBe(
       true,
@@ -221,7 +221,7 @@ describe("buscarLocalPorId", () => {
     expect(local).toMatchObject({
       id: LINHA_SALVADOR.id,
       nome: "Mercado Modelo",
-      cidadeId: "salvador",
+      cidadeId: "palmas",
       tags: ["Afro-brasileira"],
     });
   });
@@ -280,7 +280,7 @@ describe("buscarLocalPorId", () => {
     const { from, builder } = consultaFalsa({ data: [], error: null });
     supabaseMock.cliente = { from };
 
-    await listarLocais("salvador");
+    await listarLocais("palmas");
 
     expect(builder.select).toHaveBeenCalledTimes(1);
     expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("acessibilidade"));
@@ -302,3 +302,5 @@ describe("buscarLocalPorId", () => {
     await expect(buscarLocalPorId("x")).rejects.toBeTruthy();
   });
 });
+
+

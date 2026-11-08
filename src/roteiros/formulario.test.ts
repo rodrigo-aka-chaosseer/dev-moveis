@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formularioRoteiroValido, type FormularioRoteiro } from "./formulario";
 
 const PREENCHIDO: FormularioRoteiro = {
-  cidadeId: "salvador",
+  cidadeId: "palmas",
   interesses: ["cultura"],
   tempoDisponivelMin: 240,
   orcamentoCentavos: null,
@@ -30,3 +30,4 @@ describe("formularioRoteiroValido", () => {
     expect(formularioRoteiroValido({ ...PREENCHIDO, orcamentoCentavos: -1 })).toBe(false);
   });
 });
+

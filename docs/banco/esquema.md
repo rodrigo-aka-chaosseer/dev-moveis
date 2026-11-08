@@ -47,8 +47,8 @@ pessoa avalia cada lugar uma vez só.
 
 ### `cidades` — novo
 Catálogo público das cidades atendidas, com nome, UF, coordenada central e o
-estado ativo. O identificador é o mesmo slug estável usado no app (`salvador`,
-`recife`). Lugares apontam obrigatoriamente para uma cidade e a escolha do
+estado ativo. O identificador é o mesmo slug estável usado no app (`palmas`).
+Lugares apontam obrigatoriamente para uma cidade e a escolha do
 onboarding aponta opcionalmente para ela.
 
 ### `locais` — já existia, ganhou tipos e autoria

@@ -22,12 +22,12 @@ vi.mock("../../lib/supabase", () => ({ supabase: null }));
 function local(id: string, alteracoes: Partial<LocalDetalhe> = {}): LocalDetalhe {
   return {
     id,
-    cidadeId: "salvador",
+    cidadeId: "palmas",
     nome: `Local ${id}`,
     categoria: "cultura",
     latitude: -12.97,
     longitude: -38.5,
-    endereco: "Salvador",
+    endereco: "Palmas",
     horarios: null,
     gratuito: false,
     precoCentavos: 2_000,
@@ -71,7 +71,7 @@ const IA: RoteiroIa = {
 };
 
 const PREFERENCIAS: PreferenciasRecomendacao = {
-  cidadeId: "salvador",
+  cidadeId: "palmas",
   interesses: ["cultura", "historia"],
   tempoDisponivelMin: 240,
   orcamentoCentavos: 10_000,
@@ -202,3 +202,4 @@ describe("novas sugestões preservam as preferências", () => {
     ]);
   });
 });
+

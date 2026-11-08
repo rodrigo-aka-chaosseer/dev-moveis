@@ -10,7 +10,7 @@ describe("enquadramento do mapa", () => {
   });
   it("enquadra todos os marcadores com margem", () => {
     const pontos = [{ latitude: -8, longitude: -35 }, { latitude: -8.1, longitude: -34.8 }];
-    const regiao = regiaoDosLocais("recife", pontos);
+    const regiao = regiaoDosLocais("palmas", pontos);
     for (const ponto of pontos) {
       expect(Math.abs(ponto.latitude - regiao.latitude)).toBeLessThan(regiao.latitudeDelta / 2);
       expect(Math.abs(ponto.longitude - regiao.longitude)).toBeLessThan(regiao.longitudeDelta / 2);
@@ -18,6 +18,7 @@ describe("enquadramento do mapa", () => {
   });
   it("mantém zoom utilizável com um marcador ou marcadores coincidentes", () => {
     const ponto = { latitude: -8, longitude: -35 };
-    expect(regiaoDosLocais("recife", [ponto, ponto])).toEqual({ ...ponto, latitudeDelta: 0.02, longitudeDelta: 0.02 });
+    expect(regiaoDosLocais("palmas", [ponto, ponto])).toEqual({ ...ponto, latitudeDelta: 0.02, longitudeDelta: 0.02 });
   });
 });
+

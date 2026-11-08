@@ -16,7 +16,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [ ] RAÍZES-03 — navegação por abas (Levi)
 - [ ] RAÍZES-04 — tela de perfil
 - [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
-- [x] RAÍZES-14 — primeiro lote com 8 lugares curados de Salvador e Recife
+- [x] RAÍZES-14 — piloto com 8 lugares curados exclusivamente de Palmas–TO
 - [x] RAÍZES-19 — sessão do app unificada com o Supabase Auth (Josias, #35)
 - [x] RAÍZES-25 — preferências sincronizadas com o Supabase (Josias, #48)
 

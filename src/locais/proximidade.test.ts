@@ -54,11 +54,9 @@ describe("ordenarPorProximidade", () => {
     },
   );
 
-  it("usa o centro da cidade selecionada ao trocar de cidade", () => {
-    const recife = CIDADES[1];
-    const local = { ...base, latitude: recife.latitude, longitude: recife.longitude };
-    expect(ordenarPorProximidade([local], recife.id, null)[0].distanciaKm).toBe(0);
-    expect(ordenarPorProximidade([local], cidade.id, null)[0].distanciaKm).toBeGreaterThan(100);
+  it("usa o centro de Palmas quando não há localização do usuário", () => {
+    const local = { ...base, latitude: cidade.latitude, longitude: cidade.longitude };
+    expect(ordenarPorProximidade([local], cidade.id, null)[0].distanciaKm).toBe(0);
   });
 
   it("recalcula e ordena o catálogo mock sem depender do texto de distância", () => {

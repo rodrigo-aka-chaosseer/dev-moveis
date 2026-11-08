@@ -5,7 +5,7 @@ import { locais } from "../mocks/locais";
 import Mapa from "../../app/(tabs)/mapa";
 
 const mocks = vi.hoisted(() => ({
-  preferencias: { cidadeId: "salvador" as string | null, pronto: true, erro: null, escolherCidade: vi.fn() },
+  preferencias: { cidadeId: "palmas" as string | null, pronto: true, erro: null, escolherCidade: vi.fn() },
   locais: { locais: [] as unknown[], carregando: false, erro: null as string | null, recarregar: vi.fn() },
   localizacao: { coordenadas: null as { latitude: number; longitude: number } | null, estado: "ocioso", solicitar: vi.fn(), podePerguntarNovamente: true },
   push: vi.fn(), settings: vi.fn().mockResolvedValue(undefined),
@@ -37,8 +37,8 @@ async function clicar(rotulo: string) {
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.clearAllMocks();
-  Object.assign(mocks.preferencias, { cidadeId: "salvador", pronto: true, erro: null });
-  Object.assign(mocks.locais, { locais: locais.filter((local) => local.cidadeId === "salvador"), carregando: false, erro: null });
+  Object.assign(mocks.preferencias, { cidadeId: "palmas", pronto: true, erro: null });
+  Object.assign(mocks.locais, { locais: locais.filter((local) => local.cidadeId === "palmas"), carregando: false, erro: null });
   Object.assign(mocks.localizacao, { coordenadas: null, estado: "ocioso", podePerguntarNovamente: true });
 });
 afterEach(async () => { if (tela) await act(async () => tela.unmount()); });
@@ -70,8 +70,8 @@ describe("aba Mapa", () => {
   it("remove resumo da cidade anterior ao trocar a cidade", async () => {
     await montar();
     await act(async () => tela.root.findByType(tipo("MapaLugares")).props.selecionar(locais[0].id));
-    await clicar("Recife");
-    expect(mocks.preferencias.escolherCidade).toHaveBeenCalledWith("recife");
+    await clicar("Palmas");
+    expect(mocks.preferencias.escolherCidade).toHaveBeenCalledWith("palmas");
     expect(texto()).not.toContain("Ver detalhes de");
   });
 
@@ -106,3 +106,4 @@ describe("aba Mapa", () => {
     expect(texto()).toContain("Ainda não temos lugares em");
   });
 });
+

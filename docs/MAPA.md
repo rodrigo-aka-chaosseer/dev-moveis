@@ -23,7 +23,7 @@ Verificações automatizadas: `npm test`, `npm run typecheck`, `npm run lint` e 
 
 Roteiro para validar em dispositivo:
 
-- Selecionar Salvador e Recife: marcadores e lista acompanham a cidade, sem manter o resumo anterior.
+- Selecionar Palmas: marcadores e lista exibem apenas os locais do piloto.
 - Tocar em um marcador: resumo com nome, categoria, distância e apresentação. Abrir detalhes e voltar.
 - Autorizar localização: posição azul e botão Minha posição. Negar autorização: lugares continuam acessíveis. Negação permanente oferece configurações.
 - Desligar GPS e atualizar posição: aviso, sem bloquear o catálogo.

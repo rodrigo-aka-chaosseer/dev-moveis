@@ -58,7 +58,7 @@ formulário).
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `cidadeId` | `"salvador" \| "recife"` | obrigatório |
+| `cidadeId` | `"palmas"` | obrigatório |
 | `interesses` | `string[]` | 1 a 10 slugs (`gastronomia`, `historia`...): minúsculas, sem espaço |
 | `tempoDisponivelMin` | `number` | inteiro de 60 a 720 |
 | `orcamentoCentavos` | `number \| null` | opcional; teto do roteiro inteiro |
@@ -224,5 +224,5 @@ com Supabase configurado e a variável ausente ou `false`, vale a Edge Function.
 - Sem limite de uso por pessoa ainda: qualquer conta logada pode chamar à
   vontade. Próximo passo é um limite diário (tabela de contagem por usuário
   e dia, checada antes da chamada à IA).
-- Só Salvador e Recife: cidade nova precisa entrar em `CIDADES_ROTEIRO` e
+- O piloto aceita somente Palmas: cidade nova precisa entrar em `CIDADES_ROTEIRO` e
   `CENTRO_CIDADE` no `_shared`, além de `src/preferencias/dados.ts`.

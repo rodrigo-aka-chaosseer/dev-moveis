@@ -23,10 +23,10 @@ vi.mock("react-native-maps", async () => {
 });
 let tela: ReactTestRenderer;
 const tipo = (nome: string) => nome as unknown as Parameters<ReactTestRenderer["root"]["findByType"]>[0];
-const lista = locais.filter((local) => local.cidadeId === "salvador");
+const lista = locais.filter((local) => local.cidadeId === "palmas");
 async function montar(coordenadas: { latitude: number; longitude: number } | null = null) {
   await act(async () => { tela = create(createElement(MapaLugares, {
-    cidadeId: "salvador", locais: lista, coordenadas, selecionadoId: null, selecionar: mocks.selecionar,
+    cidadeId: "palmas", locais: lista, coordenadas, selecionadoId: null, selecionar: mocks.selecionar,
   })); });
 }
 beforeEach(() => {
@@ -67,3 +67,4 @@ describe("mapa nativo", () => {
     expect(JSON.stringify(tela.toJSON())).toContain("Mapa indisponível nesta versão");
   });
 });
+

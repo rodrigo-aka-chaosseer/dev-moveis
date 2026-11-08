@@ -15,7 +15,7 @@
  * `supabase` antes.
  */
 import { supabase } from "../lib/supabase";
-import { filtrarInteresses, type InteresseId, type Preferencias } from "./dados";
+import { CIDADES, filtrarInteresses, type InteresseId, type Preferencias } from "./dados";
 
 export type PreferenciasServidor = {
   interesses: InteresseId[];
@@ -227,5 +227,5 @@ export function criarSincronizador(opcoes: {
 }
 
 function ehCidadeId(valor: unknown): valor is NonNullable<Preferencias["cidadeId"]> {
-  return valor === "salvador" || valor === "recife";
+  return typeof valor === "string" && CIDADES.some((cidade) => cidade.id === valor);
 }

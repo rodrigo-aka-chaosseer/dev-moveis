@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
@@ -8,7 +8,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSessao } from "../src/sessao/SessaoProvider";
 import { Botao, v } from "../src/components/visual/Guia";
 import { colors, fonts } from "../src/theme/tokens";
-import foto from "../assets/images/cidade-abertura.creditos.json";
 
 export default function Abertura() {
   const router = useRouter();
@@ -23,16 +22,14 @@ export default function Abertura() {
   return <ScrollView style={s.tela} contentContainerStyle={s.conteudo} bounces={false}>
     <StatusBar style="light" />
     <View style={s.fundo}>
-      <Image source={require("../assets/images/cidade-abertura.jpg")} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="center" accessible={false} />
+      <Image source={require("../assets/images/splash-bg.jpg")} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="center" accessible={false} />
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.veu]} />
       <LinearGradient colors={["rgba(28,25,23,0.12)", "rgba(28,25,23,0.65)"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
       <View style={[s.marcaBloco, { paddingTop: insets.top + 28 }]}>
         <Text accessibilityRole="header" style={s.marca}>Raízes</Text>
         <View style={s.selo}><Text style={s.seloTexto}>CULTURA QUE CONECTA</Text></View>
       </View>
-      <Pressable accessibilityRole="link" accessibilityLabel="Créditos da fotografia do Pelourinho" onPress={() => { void Linking.openURL(foto.pagina); }} style={s.creditoToque}>
-        <Text style={s.credito}>Pelourinho · {foto.autor} · {foto.licenca}</Text>
-      </Pressable>
+      <View style={s.cidade}><Text style={s.cidadeTexto}>PALMAS · TO</Text></View>
     </View>
     <View style={[s.folha, { paddingBottom: insets.bottom + 24 }]}>
       <Text style={v.legenda}>DESCUBRA. SINTA. PERTENÇA.</Text>
@@ -52,8 +49,8 @@ const s = StyleSheet.create({
   marca: { fontFamily: fonts.extrabold, fontSize: 58, lineHeight: 70, letterSpacing: -2.5, color: colors.onDark },
   selo: { alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 7, backgroundColor: colors.onDarkSoft, borderRadius: 20 },
   seloTexto: { fontFamily: fonts.semibold, fontSize: 9, letterSpacing: 1.2, color: colors.earth },
-  creditoToque: { position: "absolute", bottom: 30, right: 16, minHeight: 44, justifyContent: "center" },
-  credito: { fontSize: 8, color: colors.onDarkMuted },
+  cidade: { position: "absolute", bottom: 38, right: 20, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: "rgba(28,25,23,0.55)" },
+  cidadeTexto: { fontFamily: fonts.semibold, fontSize: 9, letterSpacing: 1.2, color: colors.onDark },
   folha: { backgroundColor: colors.paper, marginTop: -28, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 26, paddingHorizontal: 28, gap: 16 },
   titulo: { fontFamily: fonts.extrabold, fontSize: 32, lineHeight: 38, letterSpacing: -1.2, color: colors.text },
   descricao: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 22, color: colors.textMuted },

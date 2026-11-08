@@ -15,7 +15,7 @@ const listarLocaisDetalhados = vi.hoisted(() => vi.fn());
 vi.mock("../../locais/listarLocais", () => ({ listarLocaisDetalhados }));
 
 const PREFERENCIAS: PreferenciasRecomendacao = {
-  cidadeId: "salvador",
+  cidadeId: "palmas",
   interesses: ["cultura"],
   tempoDisponivelMin: 180,
   orcamentoCentavos: 5_000,
@@ -29,12 +29,12 @@ function local(
 ): LocalDetalhe {
   return {
     id,
-    cidadeId: "salvador",
+    cidadeId: "palmas",
     nome: `Local ${id}`,
     categoria: "cultura",
     latitude: -12.97,
     longitude: -38.5,
-    endereco: "Salvador",
+    endereco: "Palmas",
     horarios: null,
     gratuito: false,
     precoCentavos: 2_000,
@@ -68,13 +68,13 @@ describe("padronizarPreferencias", () => {
   it("remove repetições e explicita os valores padrão", () => {
     expect(
       padronizarPreferencias({
-        cidadeId: "salvador",
+        cidadeId: "palmas",
         interesses: ["cultura", "cultura"],
         tempoDisponivelMin: 180,
         acessibilidade: ["baixa_visao", "baixa_visao"],
       }),
     ).toEqual({
-      cidadeId: "salvador",
+      cidadeId: "palmas",
       interesses: ["cultura"],
       tempoDisponivelMin: 180,
       orcamentoCentavos: null,
@@ -99,13 +99,13 @@ describe("padronizarPreferencias", () => {
 describe("selecionarCandidatosLocais", () => {
   it("mantém só a cidade e as categorias ligadas aos interesses", () => {
     const candidatos = selecionar([
-      local("cultura-salvador"),
-      local("outra-cidade", { cidadeId: "recife" }),
+      local("cultura-palmas"),
+      local("outra-cidade", { cidadeId: "outra" as "palmas" }),
       local("outra-categoria", { categoria: "natureza" }),
       local("patrimonio", { categoria: "patrimonio" }),
     ], { interesses: ["cultura", "historia"] });
 
-    expect(candidatos.map((item) => item.id)).toEqual(["cultura-salvador", "patrimonio"]);
+    expect(candidatos.map((item) => item.id)).toEqual(["cultura-palmas", "patrimonio"]);
   });
 
   it("também reconhece um interesse nas tags editoriais", () => {
@@ -206,11 +206,12 @@ describe("montarPedidoRoteiro", () => {
 
     const pedido = await montarPedidoRoteiro(PREFERENCIAS);
 
-    expect(listarLocaisDetalhados).toHaveBeenCalledWith("salvador");
+    expect(listarLocaisDetalhados).toHaveBeenCalledWith("palmas");
     expect(pedido).toMatchObject({
-      cidadeId: "salvador",
+      cidadeId: "palmas",
       interesses: ["cultura"],
       candidatos: [{ id: "publicado", categoria: "cultura", duracaoMin: 60 }],
     });
   });
 });
+

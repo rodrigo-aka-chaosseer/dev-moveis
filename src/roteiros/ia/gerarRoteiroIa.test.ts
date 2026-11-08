@@ -24,7 +24,7 @@ vi.mock("../../lib/supabase", () => ({
 const ID = "11111111-1111-4111-8111-111111111111";
 
 const PEDIDO: PedidoRoteiroIa = {
-  cidadeId: "salvador",
+  cidadeId: "palmas",
   interesses: ["cultura"],
   tempoDisponivelMin: 180,
   acessibilidade: ["cadeira_de_rodas"],
@@ -115,3 +115,5 @@ describe("gerarRoteiroIa", () => {
     await expect(gerarRoteiroIa(PEDIDO)).rejects.toThrow(ERRO_GENERICO);
   });
 });
+
+
