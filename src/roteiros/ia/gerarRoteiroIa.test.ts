@@ -5,8 +5,10 @@ import {
   ERRO_CONEXAO,
   ERRO_GENERICO,
   ERRO_LOGIN,
+  ERRO_RESPOSTA_INVALIDA,
   ERRO_SEM_SUPABASE,
   gerarRoteiroIa,
+  validarRoteiroRecebido,
   type PedidoRoteiroIa,
   type RoteiroIa,
 } from "./gerarRoteiroIa";
@@ -109,10 +111,65 @@ describe("gerarRoteiroIa", () => {
     await expect(gerarRoteiroIa(PEDIDO)).rejects.toThrow(ERRO_CONEXAO);
   });
 
-  it("resposta fora do contrato vira erro genérico", async () => {
+  it("resposta fora do contrato vira erro amigável e específico", async () => {
     clienteCom({ data: { titulo: "sem paradas" }, error: null });
 
-    await expect(gerarRoteiroIa(PEDIDO)).rejects.toThrow(ERRO_GENERICO);
+    await expect(gerarRoteiroIa(PEDIDO)).rejects.toThrow(ERRO_RESPOSTA_INVALIDA);
+  });
+});
+
+describe("validarRoteiroRecebido", () => {
+  it("aceita a resposta completa que corresponde ao pedido", () => {
+    expect(validarRoteiroRecebido(ROTEIRO, PEDIDO)).toBe(true);
+  });
+
+  it.each([null, "{json quebrado", {}, { ...ROTEIRO, paradas: [] }])(
+    "rejeita resposta vazia, quebrada ou sem paradas: %j",
+    (resposta) => {
+      expect(validarRoteiroRecebido(resposta, PEDIDO)).toBe(false);
+    },
+  );
+
+  it("rejeita ID inventado ou fora da lista de candidatos", () => {
+    const inventado = {
+      ...ROTEIRO,
+      paradas: [
+        { ...ROTEIRO.paradas[0], localId: "99999999-9999-4999-8999-999999999999" },
+      ],
+    };
+
+    expect(validarRoteiroRecebido(inventado, PEDIDO)).toBe(false);
+  });
+
+  it("rejeita paradas duplicadas", () => {
+    const duplicado = {
+      ...ROTEIRO,
+      paradas: [
+        ROTEIRO.paradas[0],
+        { ...ROTEIRO.paradas[0], ordem: 2 },
+      ],
+      duracaoMin: 120,
+    };
+
+    expect(validarRoteiroRecebido(duplicado, PEDIDO)).toBe(false);
+  });
+
+  it("rejeita duração, custo, ordem e quantidade fora dos limites do pedido", () => {
+    expect(
+      validarRoteiroRecebido({ ...ROTEIRO, duracaoMin: 181 }, PEDIDO),
+    ).toBe(false);
+    expect(
+      validarRoteiroRecebido(
+        { ...ROTEIRO, custoCentavos: 2001 },
+        { ...PEDIDO, orcamentoCentavos: 2000 },
+      ),
+    ).toBe(false);
+    expect(
+      validarRoteiroRecebido(
+        { ...ROTEIRO, paradas: [{ ...ROTEIRO.paradas[0], ordem: 2 }] },
+        PEDIDO,
+      ),
+    ).toBe(false);
   });
 });
 

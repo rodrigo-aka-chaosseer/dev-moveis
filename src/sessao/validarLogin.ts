@@ -1,9 +1,7 @@
 /**
  * Validação local do formulário de login. Primeiro confere o formato dos
- * campos e, enquanto o backend não existe, compara com uma credencial de
- * demonstração para que o fluxo completo possa ser testado.
- *
- * BACKEND: continua igual. Quem diz se a credencial confere é o servidor.
+ * campos. A confirmação das credenciais pertence exclusivamente ao
+ * Supabase Auth; não existe conta fixa ou senha de demonstração no app.
  */
 
 export type DadosLogin = {
@@ -14,16 +12,6 @@ export type DadosLogin = {
 export type ErrosLogin = {
   email?: string;
   senha?: string;
-};
-
-/**
- * Credencial temporária usada somente no protótipo.
- *
- * BACKEND: remover esta constante quando a autenticação real estiver pronta.
- */
-export const CREDENCIAL_DEMONSTRACAO: DadosLogin = {
-  email: "usuario@raizes.com",
-  senha: "123456",
 };
 
 // Regex de propósito simples: "alguma coisa @ alguma coisa . alguma coisa".
@@ -47,12 +35,4 @@ export function validarLogin(dados: DadosLogin): ErrosLogin {
   }
 
   return erros;
-}
-
-/** Compara as credenciais já preenchidas com o acesso local do protótipo. */
-export function credenciaisSaoValidas(dados: DadosLogin): boolean {
-  return (
-    normalizarEmail(dados.email) === CREDENCIAL_DEMONSTRACAO.email &&
-    dados.senha === CREDENCIAL_DEMONSTRACAO.senha
-  );
 }

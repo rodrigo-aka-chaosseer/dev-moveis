@@ -1,6 +1,5 @@
 import { supabase } from "../lib/supabase";
 import {
-  credenciaisSaoValidas,
   normalizarEmail,
   type DadosLogin,
 } from "./validarLogin";
@@ -23,6 +22,8 @@ export type ResultadoCadastro =
 
 const MENSAGEM_CREDENCIAL = "E-mail ou senha incorretos.";
 const MENSAGEM_REDE = "Sem conexão com o servidor. Tente novamente em instantes.";
+export const MENSAGEM_SUPABASE_NAO_CONFIGURADO =
+  "Não foi possível acessar sua conta agora. Use o modo visitante ou tente novamente mais tarde.";
 
 export async function autenticar(
   dados: DadosLogin,
@@ -30,9 +31,7 @@ export async function autenticar(
   const email = normalizarEmail(dados.email);
 
   if (!supabase) {
-    return credenciaisSaoValidas(dados)
-      ? { ok: true, email, nome: "Ana Silva" }
-      : { ok: false, mensagem: MENSAGEM_CREDENCIAL };
+    return { ok: false, mensagem: MENSAGEM_SUPABASE_NAO_CONFIGURADO };
   }
 
   try {
@@ -43,12 +42,13 @@ export async function autenticar(
     if (error) {
       return { ok: false, mensagem: traduzirErroLogin(error.message, error.status) };
     }
-    const nome = lerNome(data.user?.user_metadata);
+    if (!data.user) return { ok: false, mensagem: MENSAGEM_CREDENCIAL };
+    const nome = lerNome(data.user.user_metadata);
     return {
       ok: true,
-      email: data.user?.email ?? email,
+      email: data.user.email ?? email,
       nome,
-      usuarioId: data.user?.id,
+      usuarioId: data.user.id,
     };
   } catch {
     return { ok: false, mensagem: MENSAGEM_REDE };
@@ -63,8 +63,7 @@ export async function cadastrar(dados: {
   if (!supabase) {
     return {
       ok: false,
-      mensagem:
-        "O cadastro precisa do Supabase configurado. Adicione as variáveis do arquivo .env.example.",
+      mensagem: MENSAGEM_SUPABASE_NAO_CONFIGURADO,
     };
   }
 
@@ -80,11 +79,14 @@ export async function cadastrar(dados: {
     if (error) {
       return { ok: false, mensagem: traduzirErroCadastro(error.message) };
     }
+    if (!data.user) {
+      return { ok: false, mensagem: "Não foi possível criar a conta. Tente novamente." };
+    }
     return {
       ok: true,
-      email: data.user?.email ?? email,
+      email: data.user.email ?? email,
       nome,
-      usuarioId: data.user?.id,
+      usuarioId: data.user.id,
       precisaConfirmarEmail: data.session === null,
     };
   } catch {
@@ -95,7 +97,8 @@ export async function cadastrar(dados: {
 export async function encerrarAutenticacao(): Promise<void> {
   if (!supabase) return;
   try {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) console.warn("Não foi possível encerrar a sessão no servidor.", error);
   } catch (erro) {
     console.warn("Não foi possível encerrar a sessão no servidor.", erro);
   }
