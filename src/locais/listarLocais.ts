@@ -128,6 +128,12 @@ export function linhaParaLocal(valor: unknown): LocalLista | null {
   return mapearLocal(valor, cidadeDoLocal(valor));
 }
 
+/** Mesma conversão, com acessibilidade e ambiente sensorial (lista detalhada). */
+export function linhaParaDetalhe(valor: unknown): LocalDetalhe | null {
+  if (!ehLinhaLocal(valor)) return null;
+  return mapearDetalhe(valor, cidadeDoLocal(valor));
+}
+
 function consultaPublica(colunas: string = SELECT_LOCAL) {
   if (!supabase) {
     throw new Error("Supabase não configurado.");

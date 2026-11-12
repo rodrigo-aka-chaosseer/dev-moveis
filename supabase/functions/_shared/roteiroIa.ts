@@ -451,6 +451,8 @@ export function prepararCandidatos(
     if (!local) return [];
     const km = distanciaKm(centro.latitude, centro.longitude, local.latitude, local.longitude);
     if (km > RAIO_CIDADE_KM) return [];
+    // Lugar que sozinho não cabe no tempo do passeio nunca entra (RAÍZES-36).
+    if (local.tempoMedioMin > pedido.tempoDisponivelMin) return [];
     const preco = precoDe(local);
     if (pedido.orcamentoCentavos !== null && preco !== null && preco > pedido.orcamentoCentavos) {
       return [];
@@ -485,6 +487,15 @@ const MAX_PARADAS = 8;
 /** Teto de paradas pelo tempo e pelo ritmo, entre 1 e 8. */
 export function maxParadasPara(tempoDisponivelMin: number, ritmo: Ritmo): number {
   return Math.min(MAX_PARADAS, Math.max(1, Math.floor(tempoDisponivelMin / MINUTOS_POR_PARADA[ritmo])));
+}
+
+/**
+ * Quantos candidatos o pedido precisa para virar roteiro (RAÍZES-36): dois,
+ * para haver o que ordenar e escolher; um só quando o tempo e o ritmo já
+ * limitam o roteiro a uma parada. Abaixo disso a geração é bloqueada.
+ */
+export function minimoCandidatos(tempoDisponivelMin: number, ritmo: Ritmo): number {
+  return Math.min(2, maxParadasPara(tempoDisponivelMin, ritmo));
 }
 
 export const LIMITES_RESPOSTA = {
@@ -558,8 +569,9 @@ export function montarRequisicaoClaude(
     porQueConhecer: local.porQueConhecer,
     avisoVisitacao: local.avisoVisitacao,
     tags: local.tags,
-    acessibilidade: local.acessibilidade,
-    ambienteSensorial: local.ambienteSensorial,
+    // Acessibilidade e ambiente sensorial ficam fora (RAÍZES-36): o filtro já
+    // rodou em prepararCandidatos e o aviso por parada sai da validação, não
+    // do texto do modelo. Mandar esses campos só daria pistas da necessidade.
   }));
 
   return {
@@ -836,7 +848,8 @@ export const ERROS = {
   pedido_invalido: { status: 400, mensagem: "Pedido inválido." },
   sem_candidatos: {
     status: 422,
-    mensagem: "Nenhum lugar disponível combina com esse pedido. Tente outros interesses ou mais tempo.",
+    mensagem:
+      "Não há lugares suficientes para esse pedido. Escolha mais interesses, mais tempo ou um orçamento maior.",
   },
   banco: { status: 503, mensagem: "Não foi possível carregar os lugares agora. Tente de novo em instantes." },
   ocupado: { status: 503, mensagem: "Muita gente pedindo roteiro agora. Tente de novo em instantes." },

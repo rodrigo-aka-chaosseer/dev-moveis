@@ -19,6 +19,7 @@ import {
   idsConsultaveis,
   interpretarMensagem,
   LIMITES_PEDIDO,
+  minimoCandidatos,
   montarRequisicaoClaude,
   prepararCandidatos,
   SELECT_CANDIDATO,
@@ -95,7 +96,10 @@ async function atender(req: Request): Promise<Desfecho> {
   const declarado = Number(req.headers.get("Content-Length") ?? 0);
   if (declarado > LIMITES_PEDIDO.maxBytesCorpo) return falhar("pedido_invalido", "corpo_grande");
   const texto = await req.text();
-  if (texto.length > LIMITES_PEDIDO.maxBytesCorpo) return falhar("pedido_invalido", "corpo_grande");
+  // Em bytes, não em caracteres: acento e emoji ocupam mais de um byte.
+  if (new TextEncoder().encode(texto).length > LIMITES_PEDIDO.maxBytesCorpo) {
+    return falhar("pedido_invalido", "corpo_grande");
+  }
   let corpo: unknown;
   try {
     corpo = JSON.parse(texto);
@@ -120,7 +124,9 @@ async function atender(req: Request): Promise<Desfecho> {
     linhas = Array.isArray(data) ? data : [];
   }
   const candidatos = prepararCandidatos(linhas, pedido);
-  if (candidatos.length === 0) return falhar("sem_candidatos");
+  if (candidatos.length < minimoCandidatos(pedido.tempoDisponivelMin, pedido.ritmo)) {
+    return falhar("sem_candidatos", `candidatos_${candidatos.length}`);
+  }
 
   let mensagem: Anthropic.Beta.BetaMessage;
   try {

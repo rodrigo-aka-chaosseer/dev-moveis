@@ -1,14 +1,19 @@
 import type { LocalDetalhe } from "../../locais/listarLocais";
 import { listarLocaisDetalhados } from "../../locais/listarLocais";
 import type { LocalLista } from "../../mocks/locais";
+import { formatarCusto, formatarDuracao } from "../../formatos/formatos";
+import { interessesQueCombinam } from "../../preferencias/afinidade";
 import {
   CIDADES,
   filtrarInteresses,
+  INTERESSES,
+  nomeCidade,
   type CidadeId,
   type InteresseId,
 } from "../../preferencias/dados";
 import {
   LIMITES_PEDIDO,
+  minimoCandidatos,
   NECESSIDADES_ACESSIBILIDADE,
   RITMOS,
   type NecessidadeAcessibilidade,
@@ -16,16 +21,6 @@ import {
 } from "../../../supabase/functions/_shared/roteiroIa";
 
 type Categoria = LocalLista["categoria"];
-
-const CATEGORIAS_POR_INTERESSE: Record<InteresseId, readonly Categoria[]> = {
-  gastronomia: ["gastronomia"],
-  historia: ["historia", "patrimonio"],
-  cultura: ["cultura", "religiao", "comunidade"],
-  musica: ["musica"],
-  arte: ["arte"],
-  eventos: ["evento"],
-  natureza: ["natureza"],
-};
 
 export type PreferenciasRecomendacao = {
   cidadeId: CidadeId;
@@ -39,6 +34,7 @@ export type PreferenciasRecomendacao = {
 /** Dados que o app usa para auditar por que um local entrou na seleção. */
 export type CandidatoLocal = {
   id: string;
+  nome: string;
   categoria: Categoria;
   duracaoMin: number;
   custoCentavos: number | null;
@@ -160,6 +156,7 @@ export function selecionarCandidatosLocais(
     ];
     candidatos.push({
       id: local.id,
+      nome: local.nome,
       categoria: local.categoria,
       duracaoMin: local.tempoMedioMin,
       custoCentavos,
@@ -172,13 +169,9 @@ export function selecionarCandidatosLocais(
   return candidatos;
 }
 
+/** Mesma regra do Explorar e do detalhe (afinidade.ts): o que a pessoa vê e o que a IA recebe batem. */
 function combinaComInteresses(local: LocalDetalhe, interesses: readonly InteresseId[]): boolean {
-  const tags = new Set(local.tags.map(normalizarTag));
-  return interesses.some((interesse) => {
-    const porCategoria = CATEGORIAS_POR_INTERESSE[interesse].includes(local.categoria);
-    const slug = interesse === "eventos" ? "evento" : interesse;
-    return porCategoria || tags.has(slug);
-  });
+  return interessesQueCombinam(local, interesses).length > 0;
 }
 
 /** Exportada para a troca de parada (#51) usar a mesma régua da seleção. */
@@ -223,6 +216,63 @@ function semRepetir<T>(itens: readonly T[]): T[] {
   return [...new Set(itens)];
 }
 
-function normalizarTag(tag: string): string {
-  return tag.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+// ────────────────────────────────────────────────────────────────────────
+// RAÍZES-36: bloquear a geração sem candidatos suficientes e dizer por quê
+// ────────────────────────────────────────────────────────────────────────
+
+export type ResultadoSelecao = {
+  candidatos: CandidatoLocal[];
+  /** Mensagem para a tela quando não há candidatos suficientes; null quando dá para gerar. */
+  bloqueio: string | null;
+};
+
+/**
+ * Seleciona os candidatos e, se não bastarem para um roteiro, aponta o
+ * primeiro filtro que esvaziou a lista, para a mensagem sugerir o que mudar
+ * em vez de um "tente de novo" genérico.
+ */
+export function avaliarSelecao(
+  locais: readonly LocalDetalhe[],
+  pedido: PedidoSemCandidatos,
+): ResultadoSelecao {
+  const candidatos = selecionarCandidatosLocais(locais, pedido);
+  const minimo = minimoCandidatos(pedido.tempoDisponivelMin, pedido.ritmo);
+  if (candidatos.length >= minimo) return { candidatos, bloqueio: null };
+  return { candidatos, bloqueio: motivoDoBloqueio(locais, pedido, minimo) };
+}
+
+function motivoDoBloqueio(
+  locais: readonly LocalDetalhe[],
+  pedido: PedidoSemCandidatos,
+  minimo: number,
+): string {
+  const cidade = nomeCidade(pedido.cidadeId)?.split(",")[0] ?? "esta cidade";
+  const nomes = pedido.interesses
+    .map((id) => INTERESSES.find((item) => item.id === id)?.nome ?? id)
+    .join(", ");
+
+  const naCidade = locais.filter((local) => local.cidadeId === pedido.cidadeId);
+  if (naCidade.length < minimo) {
+    return `Ainda não há lugares suficientes publicados em ${cidade} para montar um roteiro.`;
+  }
+  const comInteresse = naCidade.filter((local) => combinaComInteresses(local, pedido.interesses));
+  if (comInteresse.length < minimo) {
+    return comInteresse.length === 0
+      ? `Nenhum lugar de ${cidade} combina com ${nomes}. Escolha outros interesses.`
+      : `Só 1 lugar de ${cidade} combina com ${nomes}. Escolha mais interesses para montar um roteiro.`;
+  }
+  const cabemNoTempo = comInteresse.filter((local) => local.tempoMedioMin <= pedido.tempoDisponivelMin);
+  if (cabemNoTempo.length < minimo) {
+    return `Os lugares de ${nomes} pedem mais de ${formatarDuracao(pedido.tempoDisponivelMin)} de visita. Escolha mais tempo.`;
+  }
+  const cabemNoOrcamento = cabemNoTempo.filter((local) => {
+    const custo = local.gratuito ? 0 : local.precoCentavos;
+    return pedido.orcamentoCentavos === null || custo === null || custo <= pedido.orcamentoCentavos;
+  });
+  if (cabemNoOrcamento.length < minimo) {
+    const teto = pedido.orcamentoCentavos === 0 ? "só lugares gratuitos" : `até ${formatarCusto(pedido.orcamentoCentavos)}`;
+    return `Poucos lugares de ${nomes} cabem no orçamento (${teto}). Aumente o orçamento ou escolha outros interesses.`;
+  }
+  return "Poucos lugares atendem à acessibilidade escolhida com esses interesses. Revise as opções de acessibilidade ou escolha mais interesses.";
 }

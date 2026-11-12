@@ -6,8 +6,8 @@ import { ErroGerarRoteiro, ERRO_GENERICO, gerarRoteiroIa, type NecessidadeAcessi
 import { gerarRoteiroDemonstracao } from "./gerarRoteiroDemonstracao";
 import {
   ErroPreferenciasRecomendacao,
+  avaliarSelecao,
   padronizarPreferencias,
-  selecionarCandidatosLocais,
   type PreferenciasRecomendacao,
 } from "./prepararCandidatos";
 import {
@@ -21,9 +21,6 @@ import {
   trocarParada,
   type RoteiroGerado,
 } from "./roteiroGerado";
-
-export const ERRO_SEM_CANDIDATOS =
-  "Nenhum lugar do catálogo combina com essas escolhas. Tente outros interesses, mais tempo ou outro orçamento.";
 
 export const ERRO_CATALOGO =
   "Não conseguimos carregar os lugares da cidade. Confira a internet e tente de novo.";
@@ -63,8 +60,8 @@ export function useGeracaoRoteiro() {
         const catalogo = await listarLocaisDetalhados(pedido.cidadeId).catch(() => {
           throw new ErroGerarRoteiro(ERRO_CATALOGO);
         });
-        const selecionados = selecionarCandidatosLocais(catalogo, pedido);
-        if (selecionados.length === 0) throw new ErroGerarRoteiro(ERRO_SEM_CANDIDATOS);
+        const { candidatos: selecionados, bloqueio } = avaliarSelecao(catalogo, pedido);
+        if (bloqueio) throw new ErroGerarRoteiro(bloqueio);
 
         const anterior = roteiroAnterior.current;
         const ordenados = anterior ? priorizarOutrosLugares(selecionados, anterior) : selecionados;
