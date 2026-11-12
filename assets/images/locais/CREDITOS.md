@@ -9,7 +9,7 @@ Fotos do Wikimedia Commons. Apresentadas com recorte visual para preencher os ca
 - **palacinho** — Túllio F; CC BY-SA 4.0. [Original](https://commons.wikimedia.org/wiki/File:Museu_Hist%C3%B3rico_do_Tocantins_-_Palacinho_19.jpg). [Licença](https://creativecommons.org/licenses/by-sa/4.0/).
 - **parque-cesamar** — MTur Destinos; domínio público. [Original](https://commons.wikimedia.org/wiki/File:Flavioandre_Parque_Linear_CESAMAR_Palmas_TO_(26235810147).jpg).
 - **praia-da-graciosa** — Anurb01; CC BY-SA 4.0. [Original](https://commons.wikimedia.org/wiki/File:P%C3%B4r_do_sol_na_Praia_da_Graciosa_em_Palmas,_Tocantins,_2022.jpg). [Licença](https://creativecommons.org/licenses/by-sa/4.0/).
-- **cachoeira-da-roncadeira** — Marcelo Jorge Vieira; CC BY 2.0. A imagem mostra a Serra do Lajeado no ponto de início da trilha para as cachoeiras do Macaco e da Roncadeira. [Original](https://commons.wikimedia.org/wiki/File:Palmas_-_TO.jpg). [Licença](https://creativecommons.org/licenses/by/2.0/).
+- **cachoeira-da-roncadeira** — foto de viajante exibida na página da atração no Tripadvisor; utilizada no protótipo conforme indicação da equipe. Não possui licença aberta declarada. [Página de origem](https://www.tripadvisor.com.br/Attraction_Review-g668997-d2414425-Reviews-Cachoeira_da_Roncadeira-Palmas_State_of_Tocantins.html).
 
 Não foram encontradas fotografias abertas e inequivocamente identificadas para o Espaço Cultural José Gomes Sobrinho, a Feira da 304 Sul e o Parque dos Povos Indígenas. Esses cartões mantêm a ilustração de categoria para não usar imagens sem autorização ou de outro lugar.
 
