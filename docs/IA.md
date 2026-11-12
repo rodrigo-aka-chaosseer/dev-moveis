@@ -99,7 +99,7 @@ e `roteiro_paradas` (tasks #51/#52).
 |---|---|---|
 | 400 | pedido fora do contrato | específica (ex.: "Escolha pelo menos um interesse.") |
 | 401 | sem login | "Entre na sua conta para gerar um roteiro." |
-| 422 | nenhum candidato válido sobrou | "Nenhum lugar disponível combina com esse pedido..." |
+| 422 | candidatos válidos abaixo do mínimo (2, ou 1 quando o tempo só comporta uma parada) | "Não há lugares suficientes para esse pedido..." |
 | 422 | a IA recusou o pedido | "Não foi possível sugerir um roteiro para esse pedido..." |
 | 502 | resposta da IA inválida (id inventado, repetido, cortada) | "Não foi possível montar um roteiro confiável agora..." |
 | 503 | banco fora, IA sobrecarregada ou fora | "...Tente de novo em instantes." |
@@ -114,8 +114,12 @@ e `roteiro_paradas` (tasks #51/#52).
 
 - **Lugares:** relidos do banco com o token da pessoa (RLS dela, nunca
   `service_role`), só com `arquivado_em is null`. Id inexistente, arquivado,
-  fora da cidade (30 km do centro) ou que sozinho passa do orçamento sai da
-  lista sem aviso. Se não sobra nenhum, 422.
+  fora da cidade (30 km do centro), que sozinho passa do orçamento ou que
+  sozinho não cabe no tempo sai da lista sem aviso. Se sobram menos que
+  `minimoCandidatos` (2, ou 1 quando tempo e ritmo só comportam uma parada),
+  422 sem chamar a IA. No app, `avaliarSelecao` faz o mesmo antes de chamar
+  a função e diz qual filtro esvaziou a lista (interesses, tempo, orçamento
+  ou acessibilidade).
 - **Acessibilidade** (tabela `REGRAS_ACESSIBILIDADE`, filtro antes da IA):
 
   | Necessidade | Colunas | `nao` / ruim | sem dado |
@@ -127,7 +131,9 @@ e `roteiro_paradas` (tasks #51/#52).
   Baixa visão não tira lugar: falta de recurso dificulta, não impede a visita.
   As necessidades não vão para o modelo, não são gravadas nem logadas.
 - **Prompt:** só preferências (interesses, tempo, orçamento, ritmo, máximo de
-  paradas) e dados públicos do catálogo. O conteúdo vai como JSON dentro de
+  paradas) e dados públicos do catálogo: id, nome, categoria, coordenadas,
+  tempo médio, preço, por que conhecer, aviso de visitação e tags.
+  Acessibilidade e ambiente sensorial não vão (RAÍZES-36). O conteúdo vai como JSON dentro de
   `<pedido>`/`<lugares>`, tratado como dado; `<` é escapado.
 - **Resposta:** structured outputs com JSON Schema; `localId` tem `enum` com
   os ids enviados. Mesmo assim o servidor confere tudo:
@@ -156,19 +162,10 @@ e `roteiro_paradas` (tasks #51/#52).
 
 ## Configurar
 
-Precisa do [Supabase CLI](https://supabase.com/docs/guides/cli) e do projeto
-linkado (`supabase link --project-ref <ref>`).
-
-```bash
-# chave da Anthropic só como secret da função — nunca no .env do app
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-
-supabase functions deploy gerar-roteiro
-```
-
-`SUPABASE_URL` e `SUPABASE_ANON_KEY` o runtime das Edge Functions já
-fornece. Para rodar local: `supabase functions serve gerar-roteiro --env-file
-supabase/.env.local` (com a chave nesse arquivo, que não é versionado).
+Publicar, atualizar, voltar versão e trocar a chave:
+[`IA-PUBLICACAO.md`](IA-PUBLICACAO.md) (RAÍZES-35). `SUPABASE_URL` e
+`SUPABASE_ANON_KEY` o runtime das Edge Functions já fornece; o único secret
+é `ANTHROPIC_API_KEY`.
 
 Para checar tipos do código Deno: `cd supabase/functions/gerar-roteiro &&
 deno check index.ts`. O `npm run typecheck` e o `npm run lint` do app

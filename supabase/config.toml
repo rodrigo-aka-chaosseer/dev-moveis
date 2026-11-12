@@ -9,3 +9,9 @@ enabled = true
 site_url = "http://localhost:8081"
 additional_redirect_urls = ["http://localhost:8081/**"]
 
+# RAÍZES-35: a função só aceita chamada com JWT válido no gateway, antes de
+# rodar. Dentro dela, auth.getUser() ainda exige uma pessoa logada: a chave
+# pública sozinha não gera roteiro.
+[functions.gerar-roteiro]
+enabled = true
+verify_jwt = true

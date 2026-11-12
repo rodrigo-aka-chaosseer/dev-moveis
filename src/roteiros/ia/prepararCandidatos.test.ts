@@ -190,6 +190,7 @@ describe("selecionarCandidatosLocais", () => {
     expect(candidatos).toHaveLength(40);
     expect(candidatos[0]).toEqual({
       id: "local-0",
+      nome: "Local local-0",
       categoria: "cultura",
       duracaoMin: 60,
       custoCentavos: 2_000,
