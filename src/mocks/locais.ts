@@ -68,6 +68,14 @@ const LOCAIS_CURADOS: LocalCurado[] = [
     historia: "O parque faz parte da rede de áreas públicas de lazer e visitação mantidas pelo Município de Palmas.",
     avisoVisitacao: "Use os caminhos existentes, preserve a vegetação e evite horários de calor intenso.", fonte: "https://palmas.to.gov.br/core/noticias/parques-e-praias-da-capital-possuem-equipe-de-zeladoria-para-limpeza-frequente/", atualizadoEm: "2026-11-08",
   },
+  {
+    id: "cachoeira-da-roncadeira", cidadeId: "palmas", nome: "Cachoeira da Roncadeira", categoria: "natureza", latitude: -10.303625, longitude: -48.13915,
+    endereco: "Rodovia TO-030, Taquaruçu, Palmas - TO", horarios: SEM_HORARIO, gratuito: false, precoCentavos: 3000, tempoMedioMin: 180,
+    porQueConhecer: "Uma queda de cerca de 70 metros cercada pela mata do Cerrado, com trilha e paisagem marcante em Taquaruçu.",
+    historia: "Localizada em propriedade particular na área de Taquaruçu, a Roncadeira tem visitação controlada e é um dos atrativos naturais mais conhecidos de Palmas.",
+    avisoVisitacao: "Preço de referência: R$ 30 por pessoa. Confirme valor, horário e condições da trilha antes da visita; o percurso exige preparo físico.",
+    fonte: "https://lhever.com/x/ee25b039-5c46-4d16-af2c-fa00c78e0af3", atualizadoEm: "2026-11-12",
+  },
 ];
 
 const APRESENTACAO: Record<string, { tags: string[]; distancia: string }> = {
@@ -79,6 +87,7 @@ const APRESENTACAO: Record<string, { tags: string[]; distancia: string }> = {
   "praia-da-graciosa": { tags: ["Natureza", "Pôr do sol"], distancia: "Orla da Graciosa" },
   "feira-304-sul": { tags: ["Gastronomia", "Artesanato"], distancia: "304 Sul" },
   "parque-povos-indigenas": { tags: ["Natureza", "Lazer"], distancia: "203 Norte" },
+  "cachoeira-da-roncadeira": { tags: ["Natureza", "Trilha"], distancia: "Taquaruçu · cerca de 30 km do centro" },
 };
 
 export const locais: LocalLista[] = LOCAIS_CURADOS.map((local) => ({ ...local, atualizadoEm: new Date(`${local.atualizadoEm}T12:00:00`), imagemUrl: null, audioUrl: null, tags: APRESENTACAO[local.id].tags, distancia: APRESENTACAO[local.id].distancia }));
