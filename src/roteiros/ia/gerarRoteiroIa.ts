@@ -5,6 +5,10 @@ import type {
   PedidoRoteiroIa,
   RoteiroIa,
 } from "../../../supabase/functions/_shared/roteiroIa";
+import {
+  LIMITES_RESPOSTA,
+  maxParadasPara,
+} from "../../../supabase/functions/_shared/roteiroIa";
 
 // O contrato mora num só lugar (o _shared da Edge Function); o app só
 // reexporta para o formulário (#53) e as telas (#51/#52) importarem daqui.
@@ -26,6 +30,8 @@ export const ERRO_SEM_SUPABASE =
   "A geração de roteiro precisa do Supabase configurado. Sem ele, use os roteiros temáticos.";
 export const ERRO_CONEXAO = "Sem conexão com o servidor. Confira a internet e tente de novo.";
 export const ERRO_GENERICO = "Não foi possível gerar o roteiro agora. Tente de novo.";
+export const ERRO_RESPOSTA_INVALIDA =
+  "A sugestão recebida não é segura para exibição. Tente gerar novamente.";
 export const ERRO_LOGIN = "Entre na sua conta para gerar um roteiro.";
 
 /** Acima do pior caso da função (duas tentativas de 25 s, com teto de 45 s). */
@@ -65,8 +71,8 @@ export async function gerarRoteiroIa(pedido: PedidoRoteiroIa): Promise<RoteiroIa
   if (error) {
     throw await paraErroAmigavel(error);
   }
-  if (!ehRoteiro(data)) {
-    throw new ErroGerarRoteiro(ERRO_GENERICO);
+  if (!validarRoteiroRecebido(data, pedido)) {
+    throw new ErroGerarRoteiro(ERRO_RESPOSTA_INVALIDA);
   }
   return data;
 }
@@ -100,13 +106,74 @@ async function mensagemDoCorpo(resposta: Response): Promise<string | null> {
   return null;
 }
 
-function ehRoteiro(valor: unknown): valor is RoteiroIa {
-  if (!valor || typeof valor !== "object") return false;
-  const roteiro = valor as Partial<RoteiroIa>;
+/**
+ * Segunda barreira, no aparelho, para nunca renderizar diretamente uma
+ * resposta corrompida ou adulterada. O servidor faz a validação principal;
+ * aqui o resultado ainda precisa bater com o pedido e seus IDs candidatos.
+ */
+export function validarRoteiroRecebido(
+  valor: unknown,
+  pedido: PedidoRoteiroIa,
+): valor is RoteiroIa {
+  if (!ehObjeto(valor) || valor.geradoPorIa !== true) return false;
+  if (!textoValido(valor.titulo, LIMITES_RESPOSTA.tituloMax)) return false;
+  if (!textoValido(valor.descricao, LIMITES_RESPOSTA.descricaoMax)) return false;
+  if (!Array.isArray(valor.paradas) || valor.paradas.length === 0) return false;
+
+  const maximo = maxParadasPara(pedido.tempoDisponivelMin, pedido.ritmo ?? "moderado");
+  if (valor.paradas.length > maximo) return false;
+
+  const candidatos = new Set(pedido.candidatos.map(({ id }) => id));
+  const vistos = new Set<string>();
+  let somaDuracoes = 0;
+
+  for (const [indice, parada] of valor.paradas.entries()) {
+    if (!ehObjeto(parada) || typeof parada.localId !== "string") return false;
+    if (!candidatos.has(parada.localId) || vistos.has(parada.localId)) return false;
+    if (parada.ordem !== indice + 1) return false;
+    if (
+      !ehInteiro(parada.duracaoMin) ||
+      parada.duracaoMin < LIMITES_RESPOSTA.duracaoParadaMin ||
+      parada.duracaoMin > LIMITES_RESPOSTA.duracaoParadaMax
+    ) {
+      return false;
+    }
+    if (!textoValido(parada.justificativa, LIMITES_RESPOSTA.justificativaMax)) return false;
+    if (typeof parada.acessibilidadeNaoConfirmada !== "boolean") return false;
+    vistos.add(parada.localId);
+    somaDuracoes += parada.duracaoMin;
+  }
+
+  if (!inteiroNaoNegativo(valor.duracaoMin)) return false;
+  if (valor.duracaoMin < somaDuracoes || valor.duracaoMin > pedido.tempoDisponivelMin) return false;
+  if (!inteiroNaoNegativo(valor.distanciaMetros)) return false;
+  if (valor.custoCentavos !== null && !inteiroNaoNegativo(valor.custoCentavos)) return false;
+  if (
+    pedido.orcamentoCentavos !== null &&
+    pedido.orcamentoCentavos !== undefined &&
+    typeof valor.custoCentavos === "number" &&
+    valor.custoCentavos > pedido.orcamentoCentavos
+  ) {
+    return false;
+  }
   return (
-    roteiro.geradoPorIa === true &&
-    typeof roteiro.titulo === "string" &&
-    Array.isArray(roteiro.paradas) &&
-    roteiro.paradas.length > 0
+    Array.isArray(valor.avisos) &&
+    valor.avisos.every((aviso) => textoValido(aviso, LIMITES_RESPOSTA.avisoMax))
   );
+}
+
+function ehObjeto(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === "object" && valor !== null && !Array.isArray(valor);
+}
+
+function textoValido(valor: unknown, maximo: number): valor is string {
+  return typeof valor === "string" && valor.trim().length > 0 && valor.trim().length <= maximo;
+}
+
+function inteiroNaoNegativo(valor: unknown): valor is number {
+  return ehInteiro(valor) && valor >= 0;
+}
+
+function ehInteiro(valor: unknown): valor is number {
+  return typeof valor === "number" && Number.isInteger(valor);
 }

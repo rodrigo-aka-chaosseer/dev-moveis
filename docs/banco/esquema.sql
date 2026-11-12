@@ -94,7 +94,10 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.usuarios (id, criado_em) values (new.id, now());
+  insert into public.usuarios (id, nome_exibicao, criado_em)
+  values (new.id, nullif(trim(new.raw_user_meta_data ->> 'nome'), ''), now())
+  on conflict (id) do update set
+    nome_exibicao = coalesce(public.usuarios.nome_exibicao, excluded.nome_exibicao);
   return new;
 end;
 $$;

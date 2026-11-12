@@ -447,9 +447,9 @@ describe("validarRespostaIa", () => {
     return { titulo: " Pelourinho a pé ", descricao: "Cultura afro-brasileira no centro.", paradas, ...extra };
   }
 
-  it("normaliza a ordem, calcula totais e marca acessibilidade não confirmada", () => {
+  it("calcula totais e marca acessibilidade não confirmada", () => {
     const resultado = validarRespostaIa(
-      resposta([parada(ID_CARNAVAL, { ordem: 7 }), parada(ID_IGREJA, { ordem: 2 })]),
+      resposta([parada(ID_CARNAVAL, { ordem: 1 }), parada(ID_IGREJA, { ordem: 2 })]),
       candidatos,
       pedidoAcessivel,
     );
@@ -498,6 +498,9 @@ describe("validarRespostaIa", () => {
     });
     expect(
       validarRespostaIa(resposta([parada(ID_CARNAVAL, { duracaoMin: "40" })]), candidatos, pedido()),
+    ).toEqual({ ok: false, motivo: "formato_invalido" });
+    expect(
+      validarRespostaIa(resposta([parada(ID_CARNAVAL, { ordem: "1" })]), candidatos, pedido()),
     ).toEqual({ ok: false, motivo: "formato_invalido" });
   });
 

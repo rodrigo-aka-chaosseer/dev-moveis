@@ -502,6 +502,7 @@ export const LIMITES_RESPOSTA = {
   tituloMax: 120,
   descricaoMax: 600,
   justificativaMax: 500,
+  avisoMax: 300,
   duracaoParadaMin: 15,
   duracaoParadaMax: 240,
 } as const;
@@ -716,10 +717,20 @@ export function validarRespostaIa(
 
   const porId = new Map(candidatos.map((local) => [local.id, local]));
   const vistos = new Set<string>();
-  const paradas: { local: CandidatoPreparado; duracaoMin: number; justificativa: string }[] = [];
+  const paradas: {
+    local: CandidatoPreparado;
+    duracaoMin: number;
+    justificativa: string;
+  }[] = [];
 
   for (const item of json.paradas) {
-    if (!ehObjeto(item) || typeof item.localId !== "string" || !numeroFinito(item.duracaoMin)) {
+    if (
+      !ehObjeto(item) ||
+      typeof item.localId !== "string" ||
+      !Number.isInteger(item.ordem) ||
+      (item.ordem as number) < 1 ||
+      !numeroFinito(item.duracaoMin)
+    ) {
       return { ok: false, motivo: "formato_invalido" };
     }
     const local = porId.get(item.localId);
@@ -730,7 +741,11 @@ export function validarRespostaIa(
     const justificativa = textoValido(item.justificativa, LIMITES_RESPOSTA.justificativaMax);
     if (justificativa === null) return { ok: false, motivo: "texto_invalido" };
 
-    paradas.push({ local, duracaoMin: limitarDuracao(item.duracaoMin, local, pedido), justificativa });
+    paradas.push({
+      local,
+      duracaoMin: limitarDuracao(item.duracaoMin, local, pedido),
+      justificativa,
+    });
   }
 
   const avisos: string[] = [];
