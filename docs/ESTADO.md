@@ -16,7 +16,7 @@ RAÍZES — tema Diversidade. 3º lugar no pitch da solução (163 pontos, médi
 - [ ] RAÍZES-03 — navegação por abas (Levi)
 - [ ] RAÍZES-04 — tela de perfil
 - [x] RAÍZES-07 — login e sessão no aparelho (Josias, PR #12)
-- [x] RAÍZES-14 — piloto com 8 lugares curados exclusivamente de Palmas–TO
+- [x] RAÍZES-14 — piloto com 9 lugares curados exclusivamente de Palmas–TO
 - [x] RAÍZES-19 — sessão do app unificada com o Supabase Auth (Josias, #35)
 - [x] RAÍZES-25 — preferências sincronizadas com o Supabase (Josias, #48)
 
@@ -66,7 +66,8 @@ iluminação, movimento, fila, espaço de descanso), lidos de `acessibilidade`
 e `ambiente_sensorial`. Lugar sem informação aparece como "não informado",
 nunca como "não disponível". Regras em `src/locais/acessibilidade.ts`.
 
-Os 8 lugares curados de `src/mocks/locais.ts` estão todos como "não
+Dos 9 lugares curados de `src/mocks/locais.ts`, oito são gratuitos e a
+Cachoeira da Roncadeira possui preço de referência de R$ 30. Os lugares estão como "não
 informado": acessibilidade de lugar real só entra com fonte, igual ao resto
 da curadoria. Levantar esses dados é trabalho editorial pendente.
 
@@ -77,7 +78,7 @@ história, fonte, acessibilidade e ambiente sensorial escritos à mão, e isso
 não sai de API nenhuma. Sem uns 20 a 30 lugares prontos, o app chega vazio na
 apresentação, e essa é a única parte que não dá pra virar na véspera.
 
-O primeiro lote editorial está em `src/mocks/locais.ts`, com 8 lugares reais,
+O primeiro lote editorial está em `src/mocks/locais.ts`, com 9 lugares reais,
 fontes e avisos de visitação quando aplicáveis. O risco diminuiu, mas ainda é
 preciso ampliar e revisar o catálogo até a meta de 20 a 30 lugares antes da
 apresentação.

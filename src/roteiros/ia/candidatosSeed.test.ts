@@ -16,7 +16,7 @@ import { avaliarSelecao, padronizarPreferencias, type PreferenciasRecomendacao }
 vi.mock("../../lib/supabase", () => ({ supabase: null }));
 
 /**
- * RAÍZES-36 com os dados reais do piloto: os 8 lugares de Palmas do
+ * RAÍZES-36 com os dados reais do piloto: os 9 lugares de Palmas do
  * supabase/seed.sql, com tags, acessibilidade e ambiente sensorial.
  */
 const LINHAS = linhasDoSeed();
@@ -32,6 +32,7 @@ const ID = {
   graciosa: "30000000-0000-4000-8000-000000000006",
   feira: "30000000-0000-4000-8000-000000000007",
   povosIndigenas: "30000000-0000-4000-8000-000000000008",
+  roncadeira: "30000000-0000-4000-8000-000000000009",
 };
 
 function avaliar(preferencias: Partial<PreferenciasRecomendacao>, catalogo = CATALOGO) {
@@ -60,10 +61,12 @@ function pedidoServidor(alteracoes: Record<string, unknown> = {}): PedidoNormali
 }
 
 describe("seed do piloto", () => {
-  it("tem os 8 lugares publicados de Palmas", () => {
-    expect(CATALOGO).toHaveLength(8);
+  it("tem os 9 lugares publicados de Palmas, gratuitos e pagos", () => {
+    expect(CATALOGO).toHaveLength(9);
     expect(CATALOGO.every((local) => local.cidadeId === "palmas")).toBe(true);
     expect(LINHAS.every((linha) => linha.arquivado_em === null)).toBe(true);
+    expect(CATALOGO.some((local) => local.gratuito)).toBe(true);
+    expect(CATALOGO.some((local) => !local.gratuito && local.precoCentavos === 3000)).toBe(true);
   });
 });
 
@@ -179,6 +182,6 @@ describe("servidor (o que a IA recebe)", () => {
     expect(Object.keys(lugares[0]).sort()).toEqual(
       ["avisoVisitacao", "categoria", "gratuito", "id", "latitude", "longitude", "nome", "porQueConhecer", "precoCentavos", "tags", "tempoMedioMin"],
     );
-    expect(conteudo).not.toMatch(/acessibilidade|ambienteSensorial|cadeira|rampa/i);
+    expect(conteudo).not.toMatch(/acessibilidade|ambienteSensorial|\bcadeira\b|\brampa\b/i);
   });
 });

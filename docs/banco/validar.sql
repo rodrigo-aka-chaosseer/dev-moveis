@@ -13,7 +13,8 @@ from public.locais where arquivado_em is null;
 
 select cidade_id,
   count(*) >= 8 as possui_catalogo_minimo,
-  count(*) filter (where gratuito) > 0 as possui_gratuito
+  count(*) filter (where gratuito) > 0 as possui_gratuito,
+  count(*) filter (where not gratuito and preco_centavos > 0) > 0 as possui_pago
 from public.locais where arquivado_em is null group by cidade_id order by cidade_id;
 
 select 'acessibilidade' as verificacao, count(*) >= 3 as ok, count(*) as encontrado
